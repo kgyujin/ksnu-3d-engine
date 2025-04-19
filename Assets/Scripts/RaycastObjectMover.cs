@@ -209,4 +209,12 @@ public class RaycastObjectMover : MonoBehaviour
             lastOutline = null;
         }
     }
+
+    //2024-04-18 추가
+    //현재 선택된 오브젝트를 외부에서 확인
+    public Transform GetSelectedObject()
+    {
+        return selectedObject;
+    }
+
 }
