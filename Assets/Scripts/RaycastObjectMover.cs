@@ -5,7 +5,7 @@ public class RaycastObjectMover : MonoBehaviour
     [Header("감지 설정")]
     public LayerMask selectableLayer; // 선택 가능한 오브젝트 레이어
     public float rayDistance = 5f; // 레이 길이
-    public float smoothTime = 0.1f; // 이동 부드러움 정도
+    public float moveForce = 500f; // 이동 힘 세기
     public bool drawDebugRay = true; // 디버그용 레이 표시 여부
 
     [Header("회전 설정")]
@@ -22,6 +22,13 @@ public class RaycastObjectMover : MonoBehaviour
     private Renderer selectedRenderer = null; // 선택된 오브젝트의 렌더러
     private Rigidbody selectedRigidbody = null; // 선택된 오브젝트의 리지드바디
 
+    private Camera cam; // 메인 카메라
+
+    private Rigidbody playerRigidbody = null; // 플레이어 리지드바디
+
+    private Collider playerCollider = null; // 플레이어 콜라이더
+    private Collider objectCollider = null; // 오브젝트 콜라이더
+
     private bool wasKinematic = false; // 원래 키네마틱 여부 저장
     private bool hadGravity = false; // 원래 중력 여부 저장
 
@@ -31,8 +38,6 @@ public class RaycastObjectMover : MonoBehaviour
     private float initialYRotationOffset;
     // 초기 카메라 Y축 각도
     private float initialCameraYRotation;
-
-    private Camera cam; // 카메라
 
     // 오브젝트 선택 지점에 대한 오프셋 저장
     private Vector3 grabOffset = Vector3.zero;
@@ -46,6 +51,13 @@ public class RaycastObjectMover : MonoBehaviour
     void Start()
     {
         cam = Camera.main; // 메인 카메라 참조
+
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null)
+        {
+            playerCollider = player.GetComponent<Collider>();
+            playerRigidbody = player.GetComponent<Rigidbody>();
+        }
     }
 
     void Update()
@@ -102,26 +114,26 @@ public class RaycastObjectMover : MonoBehaviour
         Vector3 wand_position = wand.transform.position;
         Debug.DrawLine(wand_position, targetPos, Color.blue);
         Debug.Log("테스트");
-
-
     }
 
     void FixedUpdate()
     {
         // 오브젝트가 선택된 경우 카메라와의 상대 위치를 유지하며 이동
-        if (selectedObject != null)
+        if (selectedObject != null && selectedRigidbody != null)
         {
             // 카메라로부터의 상대 위치 계산
-            targetPos = cam.transform.position + cam.transform.forward * grabDistance +
+            Vector3 targetPos = cam.transform.position + cam.transform.forward * grabDistance +
                                 cam.transform.right * grabbedLocalPosition.x +
-                                cam.transform.up * grabbedLocalPosition.y;
+                                cam.transform.up * grabbedLocalPosition.y - grabOffset;
 
-            // 오브젝트를 이동시킬 때 오프셋을 적용하여 선택한 정확한 지점을 유지
-            targetPos -= grabOffset;
+            Vector3 direction = targetPos - selectedRigidbody.position;
 
+            // 플레이어 속도 보정 적용
+            Vector3 playerVelocity = playerRigidbody != null ? playerRigidbody.linearVelocity : Vector3.zero;
+            Vector3 desiredVelocity = direction.normalized * Mathf.Min(direction.magnitude * 10f, moveForce * Time.fixedDeltaTime);
 
-
-
+            // 최종 속도: 목표 지점까지 이동 + 플레이어 속도 반영
+            selectedRigidbody.linearVelocity = desiredVelocity + playerVelocity * 0.5f;
 
             // 카메라의 현재 Y축 회전각 계산
             float currentCameraYRotation = cam.transform.eulerAngles.y;
@@ -140,25 +152,7 @@ public class RaycastObjectMover : MonoBehaviour
                 targetRotation = Quaternion.Euler(originalEuler.x, targetYRotation, originalEuler.z);
             }
 
-            if (selectedRigidbody != null)
-            {
-                selectedRigidbody.MovePosition(targetPos); // Rigidbody가 있으면 MovePosition 사용
-                selectedRigidbody.MoveRotation(targetRotation); // 회전 적용
-            }
-            else
-            {
-                selectedObject.position = Vector3.SmoothDamp(
-                    selectedObject.position,
-                    targetPos,
-                    ref moveVelocity,
-                    smoothTime,
-                    Mathf.Infinity,
-                    Time.fixedDeltaTime
-                );
-
-                // 회전 적용 (부드럽게)
-                selectedObject.rotation = targetRotation;
-            }
+            selectedRigidbody.MoveRotation(targetRotation); // 회전 적용
         }
     }
 
@@ -250,7 +244,14 @@ public class RaycastObjectMover : MonoBehaviour
                     hadGravity = selectedRigidbody.useGravity;
 
                     selectedRigidbody.useGravity = false;
-                    selectedRigidbody.isKinematic = true;
+                    selectedRigidbody.isKinematic = false;
+
+                    objectCollider = selectedRigidbody.GetComponent<Collider>();
+
+                    if (playerCollider != null && objectCollider != null)
+                    {
+                        Physics.IgnoreCollision(playerCollider, objectCollider, true);
+                    }
                 }
 
                 selectedRenderer = selectedObject.GetComponent<Renderer>();
@@ -279,7 +280,15 @@ public class RaycastObjectMover : MonoBehaviour
         {
             selectedRigidbody.isKinematic = wasKinematic;
             selectedRigidbody.useGravity = hadGravity;
+            selectedRigidbody.linearVelocity = Vector3.zero;
+
+            if (playerCollider != null && objectCollider != null)
+            {
+                Physics.IgnoreCollision(playerCollider, objectCollider, false);
+            }
+
             selectedRigidbody = null;
+            objectCollider = null;
         }
 
         // 선택 Outline 비활성화
