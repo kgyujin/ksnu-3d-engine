@@ -8,8 +8,13 @@ public class RaycastObjectMover : MonoBehaviour
     public float smoothTime = 0.1f; // 이동 부드러움 정도
     public bool drawDebugRay = true; // 디버그용 레이 표시 여부
 
+    [Header("회전 설정")]
+    public float rotationSmoothTime = 0.1f; // 회전 부드러움 정도
+    public bool followCameraRotationY = true; // 카메라 Y축 회전 따라가기
+
     private Transform selectedObject = null; // 선택된 오브젝트
     private Vector3 moveVelocity = Vector3.zero; // 스무스 이동에 사용될 속도 벡터
+    private float currentRotationVelocity; // 회전 스무스 댐핑에 사용될 변수
 
     private Outline lastOutline = null; // 하이라이트(감지)된 오브젝트의 Outline
     private Outline selectedOutline = null; // 선택(잡기)된 오브젝트의 Outline
@@ -20,7 +25,23 @@ public class RaycastObjectMover : MonoBehaviour
     private bool wasKinematic = false; // 원래 키네마틱 여부 저장
     private bool hadGravity = false; // 원래 중력 여부 저장
 
+    // 선택 시 초기 회전값 저장
+    private Quaternion originalRotation;
+    // 카메라와 오브젝트 간의 초기 Y축 회전 차이 저장
+    private float initialYRotationOffset;
+    // 초기 카메라 Y축 각도
+    private float initialCameraYRotation;
+
     private Camera cam; // 카메라
+
+    // 오브젝트 선택 지점에 대한 오프셋 저장
+    private Vector3 grabOffset = Vector3.zero;
+
+    // 카메라로부터의 상대 거리 저장
+    private float grabDistance = 0f;
+
+    // 카메라 기준 상대 방향 저장
+    private Vector3 grabbedLocalPosition;
 
     void Start()
     {
@@ -38,9 +59,22 @@ public class RaycastObjectMover : MonoBehaviour
             Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.cyan);
 
         // 마우스 휠로 레이 거리 조절
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        rayDistance += scroll * 5f;
-        rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
+        if (selectedObject == null)  // 오브젝트가 선택되지 않은 경우에만 거리 조절
+        {
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            rayDistance += scroll * 5f;
+            rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
+        }
+        else
+        {
+            // 오브젝트가 선택된 상태에서 마우스 휠로 거리 조절
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (Mathf.Abs(scroll) > 0.01f)
+            {
+                grabDistance -= scroll * 5f;
+                grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
+            }
+        }
 
         // 오브젝트를 선택하지 않았을 때만 감지 및 선택 처리
         if (selectedObject == null)
@@ -54,18 +88,62 @@ public class RaycastObjectMover : MonoBehaviour
         {
             ReleaseSelectedObject();
         }
+
+        effect();
+    }
+
+    public GameObject wand;
+    Vector3 targetPos;
+
+    void effect()
+    {
+
+        Wand wand = GetComponent<Wand>();
+        Vector3 wand_position = wand.transform.position;
+        Debug.DrawLine(wand_position, targetPos, Color.blue);
+        Debug.Log("테스트");
+
+
     }
 
     void FixedUpdate()
     {
-        // 오브젝트가 선택된 경우 카메라 앞쪽으로 이동
+        // 오브젝트가 선택된 경우 카메라와의 상대 위치를 유지하며 이동
         if (selectedObject != null)
         {
-            Vector3 targetPos = cam.transform.position + cam.transform.forward * rayDistance;
+            // 카메라로부터의 상대 위치 계산
+            targetPos = cam.transform.position + cam.transform.forward * grabDistance +
+                                cam.transform.right * grabbedLocalPosition.x +
+                                cam.transform.up * grabbedLocalPosition.y;
+
+            // 오브젝트를 이동시킬 때 오프셋을 적용하여 선택한 정확한 지점을 유지
+            targetPos -= grabOffset;
+
+
+
+
+
+            // 카메라의 현재 Y축 회전각 계산
+            float currentCameraYRotation = cam.transform.eulerAngles.y;
+
+            // 회전 처리
+            Quaternion targetRotation = originalRotation;
+
+            if (followCameraRotationY)
+            {
+                // 카메라 회전과 오브젝트 회전의 상대적 차이를 유지
+                float yRotationDelta = Mathf.DeltaAngle(initialCameraYRotation, currentCameraYRotation);
+                Vector3 originalEuler = originalRotation.eulerAngles;
+                float targetYRotation = originalEuler.y + yRotationDelta;
+
+                // X와 Z 회전은 그대로 유지하고 Y 회전만 업데이트
+                targetRotation = Quaternion.Euler(originalEuler.x, targetYRotation, originalEuler.z);
+            }
 
             if (selectedRigidbody != null)
             {
                 selectedRigidbody.MovePosition(targetPos); // Rigidbody가 있으면 MovePosition 사용
+                selectedRigidbody.MoveRotation(targetRotation); // 회전 적용
             }
             else
             {
@@ -77,6 +155,9 @@ public class RaycastObjectMover : MonoBehaviour
                     Mathf.Infinity,
                     Time.fixedDeltaTime
                 );
+
+                // 회전 적용 (부드럽게)
+                selectedObject.rotation = targetRotation;
             }
         }
     }
@@ -131,6 +212,35 @@ public class RaycastObjectMover : MonoBehaviour
 
                 selectedObject = hitObj.transform;
                 moveVelocity = Vector3.zero;
+                currentRotationVelocity = 0f;
+
+                // 히트 포인트와 오브젝트 중심 간의 오프셋 계산
+                grabOffset = hit.point - selectedObject.position;
+
+                // 카메라로부터의 거리 저장
+                grabDistance = Vector3.Distance(cam.transform.position, hit.point);
+
+                // 카메라 기준 오브젝트 위치의 로컬 좌표 계산
+                Vector3 directionToHit = hit.point - cam.transform.position;
+                Vector3 forwardDistance = Vector3.Project(directionToHit, cam.transform.forward);
+
+                // 카메라 기준 로컬 좌표 (좌우, 상하) 구하기
+                Vector3 rightComponent = Vector3.Project(directionToHit, cam.transform.right);
+                Vector3 upComponent = Vector3.Project(directionToHit, cam.transform.up);
+
+                float rightDistance = Vector3.Dot(rightComponent, cam.transform.right);
+                float upDistance = Vector3.Dot(upComponent, cam.transform.up);
+
+                grabbedLocalPosition = new Vector3(rightDistance, upDistance, 0);
+
+                // 선택 시 오브젝트의 초기 회전값 저장
+                originalRotation = selectedObject.rotation;
+
+                // 카메라 현재 Y축 회전 저장
+                initialCameraYRotation = cam.transform.eulerAngles.y;
+
+                // 오브젝트와 카메라 간의 Y축 회전 차이 저장
+                initialYRotationOffset = Mathf.DeltaAngle(initialCameraYRotation, originalRotation.eulerAngles.y);
 
                 // Rigidbody 물리 설정 저장 및 비활성화
                 selectedRigidbody = selectedObject.GetComponent<Rigidbody>();
@@ -182,6 +292,8 @@ public class RaycastObjectMover : MonoBehaviour
         selectedRenderer = null;
         selectedObject = null;
         moveVelocity = Vector3.zero;
+        grabOffset = Vector3.zero;
+        grabbedLocalPosition = Vector3.zero;
     }
 
     // 오브젝트에 Outline 컴포넌트 추가하거나 가져오고 색상 설정
