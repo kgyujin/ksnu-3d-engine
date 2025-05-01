@@ -515,11 +515,17 @@ public class player_movement : MonoBehaviour
     private bool jumpRequested;
     private bool isOnSlope;
 
+    private Animator animator;
+
+    Animator anim;
+
     void Start()
     {
         player = GetComponent<Rigidbody>();
         cameras = GetComponent<Camera_test>();
         player.constraints = RigidbodyConstraints.FreezeRotation;
+
+        animator = GetComponent<Animator>();
     }
 
     void Update()
@@ -527,15 +533,25 @@ public class player_movement : MonoBehaviour
         inputDir = new Vector3(cameras.horizontalInput, 0, cameras.verticalInput);
         movement = cameras.moveDir;
 
+
+        float moveSpeed = new Vector2(player.linearVelocity.x, player.linearVelocity.z).magnitude;
+        animator.SetFloat("MoveSpeed", moveSpeed / speed);
+
+        //bool isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.1f);
+        isGrounded = Check_isGrounded();
+        animator.SetBool("Grounded", isGrounded);
+
         if (isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
+            //anim.SetBool("isJumping", true);
+            //anim.SetTrigger("Wave");
             jumpRequested = true;
         }
     }
 
     private void FixedUpdate()
     {
-        isGrounded = Check_isGrounded();
+        
         CheckSlope();
         HandleMovement();
         HandleRotation();
