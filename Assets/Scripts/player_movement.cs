@@ -632,12 +632,78 @@ public class player_movement : MonoBehaviour
 
     //    player.AddForce(force, ForceMode.Acceleration);
     //}
+    //private void MovementOnSlope()
+    //{
+    //    // 경사면에 투영된 이동 벡터 계산
+    //    slopeMovementDir = Vector3.ProjectOnPlane(movement, hit.normal).normalized;
+
+    //    // 경사 각도에 따른 힘 계산
+    //    // 내리막/오르막 감지 (이동 방향과 경사면 법선의 내적이 양수면 내리막)
+    //    bool isDownhill = Vector3.Dot(slopeMovementDir, Vector3.down) > 0;
+    //    float slopeMultiplier;
+
+    //    if (isDownhill)
+    //    {
+    //        // 내리막에서는 속도 크게 감소 (경사가 가파를수록 더 느리게)
+    //        slopeMultiplier = 0.5f - (slopeAngle / maxSlopeAngle) * 0.3f;
+    //    }
+    //    else
+    //    {
+    //        // 오르막에서는 경사에 따라 힘 증가 (대각선 이동을 고려하여 증가)
+    //        slopeMultiplier = 1.0f + (slopeAngle / maxSlopeAngle) * 0.15f;
+    //    }
+
+    //    // 대각선 이동 감지 (전진/후진 + 좌/우)
+    //    bool isDiagonal = Mathf.Abs(cameras.verticalInput) > 0.1f && Mathf.Abs(cameras.horizontalInput) > 0.1f;
+
+    //    if (isDiagonal)
+    //    {
+    //        if (isDownhill)
+    //        {
+    //            // 내리막 대각선: 속도 감소 유지
+    //            float diagonalSlopeBoost = 0.8f;
+    //            slopeMultiplier *= diagonalSlopeBoost;
+    //        }
+    //        else
+    //        {
+    //            // 오르막 대각선: 추가 힘 부여
+    //            float diagonalUphillBoost = 0.8f; // 오르막 대각선에서는 더 강한 힘
+    //            slopeMultiplier *= diagonalUphillBoost;
+
+    //            // 경사면 위쪽 방향으로 더 강한 힘을 가함
+    //            slopeMovementDir += hit.normal * 0.5f;
+    //            slopeMovementDir.Normalize();
+    //        }
+    //    }
+
+    //    // 최종 힘 적용
+    //    Vector3 force = slopeMovementDir * speed * slopeMultiplier;
+
+    //    // 경사면에서 중력에 의한 미끄러짐 방지를 위한 상향력
+    //    if (slopeAngle > 10f)
+    //    {
+    //        // 대각선 오르막에서는 추가 상향력 부여
+    //        float upwardMultiplier = isDiagonal && !isDownhill ? 0.3f : 0.2f;
+    //        force += hit.normal * (slopeAngle * upwardMultiplier);
+    //    }
+
+    //    player.AddForce(force, ForceMode.Acceleration);
+    //}
+
     private void MovementOnSlope()
     {
         // 경사면에 투영된 이동 벡터 계산
         slopeMovementDir = Vector3.ProjectOnPlane(movement, hit.normal).normalized;
 
-        // 경사 각도에 따른 힘 계산
+        // 15도 미만에서는 기존속도 유지
+        if (slopeAngle < 15f)
+        {
+            // 기존 속도 유지 (정상 이동)
+            Vector3 force1 = slopeMovementDir * speed;
+            player.AddForce(force1, ForceMode.Acceleration);
+            return;
+        }
+
         // 내리막/오르막 감지 (이동 방향과 경사면 법선의 내적이 양수면 내리막)
         bool isDownhill = Vector3.Dot(slopeMovementDir, Vector3.down) > 0;
         float slopeMultiplier;
@@ -669,9 +735,8 @@ public class player_movement : MonoBehaviour
                 // 오르막 대각선: 추가 힘 부여
                 float diagonalUphillBoost = 0.8f; // 오르막 대각선에서는 더 강한 힘
                 slopeMultiplier *= diagonalUphillBoost;
-
                 // 경사면 위쪽 방향으로 더 강한 힘을 가함
-                slopeMovementDir += hit.normal * 0.3f;
+                slopeMovementDir += hit.normal * 0.5f;
                 slopeMovementDir.Normalize();
             }
         }

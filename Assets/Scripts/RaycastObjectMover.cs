@@ -101,7 +101,7 @@ public class RaycastObjectMover : MonoBehaviour
             ReleaseSelectedObject();
         }
 
-        effect();
+        //effect();
     }
 
     public GameObject wand;
@@ -320,6 +320,8 @@ public class RaycastObjectMover : MonoBehaviour
         outline.enabled = true;
         return outline;
     }
+
+
 
     // 하이라이트 제거
     void ClearHighlight()

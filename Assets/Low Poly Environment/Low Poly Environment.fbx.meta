@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: 593d4f7dc5f444843b2b02f101b56b8c
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315184
+  packageName: Low Poly Environment
+  packageVersion: 1.0
+  assetPath: Assets/Skyden_Games/Low Poly Environment/Low Poly Environment.fbx
+  uploadId: 743691
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -40,7 +47,7 @@ ModelImporter:
     extraExposedTransformPaths: []
     extraUserProperties: []
     clipAnimations: []
-    isReadable: 0
+    isReadable: 1
   meshes:
     lODScreenPercentages: []
     globalScale: 1
@@ -115,10 +122,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 315184
-  packageName: Low Poly Environment
-  packageVersion: 1.0
-  assetPath: Assets/Skyden_Games/Low Poly Environment/Low Poly Environment.fbx
-  uploadId: 743691
