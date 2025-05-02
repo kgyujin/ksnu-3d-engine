@@ -4,6 +4,7 @@ public class RaycastObjectMover : MonoBehaviour
 {
     [Header("감지 설정")]
     public LayerMask selectableLayer; // 선택 가능한 오브젝트 레이어
+    public LayerMask Wand;
     public float rayDistance = 5f; // 레이 길이
     public float moveForce = 500f; // 이동 힘 세기
     public bool drawDebugRay = true; // 디버그용 레이 표시 여부
@@ -187,6 +188,11 @@ public class RaycastObjectMover : MonoBehaviour
             {
                 ClearHighlight();
             }
+            if(((1 << hitObj.layer) & Wand) != 0)
+            {
+                Debug.Log("지팡이 입니다.");
+            }
+
         }
         else
         {
