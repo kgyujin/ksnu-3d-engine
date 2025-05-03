@@ -8,6 +8,8 @@ public class RaycastObjectMover : MonoBehaviour
     public float rayDistance = 5f; // 레이 길이
     public float moveForce = 500f; // 이동 힘 세기
     public bool drawDebugRay = true; // 디버그용 레이 표시 여부
+    public LayerMask interactableLayer; // 상호작용 가능한 오브젝트 레이어
+    private Outline lastInteractOutline = null; // 버튼 등 인터랙트 오브젝트 outline
 
     [Header("회전 설정")]
     public float rotationSmoothTime = 0.1f; // 회전 부드러움 정도
@@ -103,6 +105,8 @@ public class RaycastObjectMover : MonoBehaviour
         }
 
         //effect();
+
+        HandleInteraction(ray);
     }
 
     public GameObject wand;
@@ -184,11 +188,40 @@ public class RaycastObjectMover : MonoBehaviour
                     lastOutline.OutlineColor = Color.yellow;
                 }
             }
+
+            // Interactable 레이어 오브젝트 하이라이트
+            if (((1 << hitObj.layer) & interactableLayer) != 0)
+            {
+                // 버튼이 이미 눌린 상태인지 확인
+                IInteractable interactable = hitObj.GetComponent<IInteractable>();
+                if (interactable is ButtonActivator button && button.IsPressed)
+                {
+                    // 눌린 버튼은 아웃라인 처리 하지 않음
+                    ClearHighlight();
+                    return;
+                }
+
+                // 기존 아웃라인 처리 로직 유지
+                if (lastInteractOutline != null && lastInteractOutline.gameObject != hitObj)
+                {
+                    lastInteractOutline.enabled = false;
+                    lastInteractOutline = null;
+                }
+
+                if (lastInteractOutline == null)
+                {
+                    lastInteractOutline = EnableOutline(hitObj, Color.yellow);
+                }
+                else
+                {
+                    lastInteractOutline.OutlineColor = Color.yellow;
+                }
+            }
             else
             {
                 ClearHighlight();
             }
-            if(((1 << hitObj.layer) & Wand) != 0)
+            if (((1 << hitObj.layer) & Wand) != 0)
             {
                 Debug.Log("지팡이 입니다.");
             }
@@ -337,6 +370,11 @@ public class RaycastObjectMover : MonoBehaviour
             lastOutline.enabled = false;
             lastOutline = null;
         }
+        if (lastInteractOutline != null)
+        {
+            lastInteractOutline.enabled = false;
+            lastInteractOutline = null;
+        }
     }
 
     //2024-04-18 추가
@@ -346,4 +384,25 @@ public class RaycastObjectMover : MonoBehaviour
         return selectedObject;
     }
 
+    // 버튼 감지 및 상호작용 처리
+    void HandleInteraction(Ray ray)
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
+            {
+                GameObject hitObj = hit.collider.gameObject;
+
+                // Interactable 레이어 확인
+                if (((1 << hitObj.layer) & interactableLayer) != 0)
+                {
+                    IInteractable interactable = hitObj.GetComponent<IInteractable>();
+                    if (interactable != null)
+                    {
+                        interactable.Interact();
+                    }
+                }
+            }
+        }
+    }
 }
