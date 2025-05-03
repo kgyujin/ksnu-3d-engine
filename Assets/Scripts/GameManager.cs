@@ -7,11 +7,22 @@ public class GameManager : MonoBehaviour
     private Vector3 _lastCheckpointPosition;
     private int _lastCheckpointId = -1; // 현재 체크포인트 순번
 
+    public static bool isPaused = false;
+    public static bool canPlayerMove = true;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+        }
+    }
+
+    private void Update()
+    {
+        if (!GameManager.canPlayerMove)
+        {
+            return;
         }
     }
 
