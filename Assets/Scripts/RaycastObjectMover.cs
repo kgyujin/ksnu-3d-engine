@@ -3,58 +3,54 @@ using UnityEngine;
 public class RaycastObjectMover : MonoBehaviour
 {
     [Header("감지 설정")]
-    public LayerMask selectableLayer; // 선택 가능한 오브젝트 레이어
-    public LayerMask Wand;
-    public float rayDistance = 5f; // 레이 길이
-    public float moveForce = 500f; // 이동 힘 세기
-    public bool drawDebugRay = true; // 디버그용 레이 표시 여부
-    public LayerMask interactableLayer; // 상호작용 가능한 오브젝트 레이어
-    private Outline lastInteractOutline = null; // 버튼 등 인터랙트 오브젝트 outline
+
+    public Transform wandPoint;  // 플레이어 옆에 지팡이를 붙일 위치
+    private GameObject selectedWand;  // 현재 선택된 지팡이
+    private Vector3 selectedWandOriginalPosition;  // 지팡이 원래 위치 저장용
+    private Quaternion selectedWandOriginalRotation;  // 지팡이 원래 회전 저장용
+
+    public LayerMask selectableLayer;  // 일반 선택 가능한 오브젝트 Layer
+    public LayerMask Wand;  // 지팡이 Layer
+    public float rayDistance = 5f;  // Raycast 거리
+    public float moveForce = 500f;  // 물체를 끌어올 때 힘
+    public bool drawDebugRay = true;  // 디버그용 Ray 표시 여부
+    public LayerMask interactableLayer;  // 인터랙트 가능한 오브젝트 Layer
+    private Outline lastInteractOutline = null;  // 마지막으로 강조된 인터랙트 오브젝트
 
     [Header("회전 설정")]
-    public float rotationSmoothTime = 0.1f; // 회전 부드러움 정도
-    public bool followCameraRotationY = true; // 카메라 Y축 회전 따라가기
+    public float rotationSmoothTime = 0.1f;  // 회전 부드럽게 만드는 시간
+    public bool followCameraRotationY = true;  // 카메라 회전을 따라갈지 여부
 
-    private Transform selectedObject = null; // 선택된 오브젝트
-    private Vector3 moveVelocity = Vector3.zero; // 스무스 이동에 사용될 속도 벡터
-    private float currentRotationVelocity; // 회전 스무스 댐핑에 사용될 변수
+    private Transform selectedObject = null;  // 현재 잡은 오브젝트
+    private Vector3 moveVelocity = Vector3.zero;  // 이동 속도
+    private float currentRotationVelocity;
 
-    private Outline lastOutline = null; // 하이라이트(감지)된 오브젝트의 Outline
-    private Outline selectedOutline = null; // 선택(잡기)된 오브젝트의 Outline
+    private Outline lastOutline = null;  // 마지막으로 강조된 일반 오브젝트
+    private Outline selectedOutline = null;  // 현재 잡힌 오브젝트의 강조선
 
-    private Renderer selectedRenderer = null; // 선택된 오브젝트의 렌더러
-    private Rigidbody selectedRigidbody = null; // 선택된 오브젝트의 리지드바디
+    private Renderer selectedRenderer = null;  // 현재 잡힌 오브젝트 렌더러
+    private Rigidbody selectedRigidbody = null;  // 현재 잡힌 오브젝트 Rigidbody
 
-    private Camera cam; // 메인 카메라
+    private Camera cam;
+    private Rigidbody playerRigidbody = null;  // 플레이어 Rigidbody
+    private Collider playerCollider = null;  // 플레이어 Collider
+    private Collider objectCollider = null;  // 잡힌 오브젝트의 Collider
 
-    private Rigidbody playerRigidbody = null; // 플레이어 리지드바디
+    private bool wasKinematic = false;  // 기존에 Kinematic 상태였는지 저장
+    private bool hadGravity = false;  // 기존에 Gravity가 있었는지 저장
 
-    private Collider playerCollider = null; // 플레이어 콜라이더
-    private Collider objectCollider = null; // 오브젝트 콜라이더
-
-    private bool wasKinematic = false; // 원래 키네마틱 여부 저장
-    private bool hadGravity = false; // 원래 중력 여부 저장
-
-    // 선택 시 초기 회전값 저장
     private Quaternion originalRotation;
-    // 카메라와 오브젝트 간의 초기 Y축 회전 차이 저장
     private float initialYRotationOffset;
-    // 초기 카메라 Y축 각도
     private float initialCameraYRotation;
-
-    // 오브젝트 선택 지점에 대한 오프셋 저장
     private Vector3 grabOffset = Vector3.zero;
-
-    // 카메라로부터의 상대 거리 저장
     private float grabDistance = 0f;
-
-    // 카메라 기준 상대 방향 저장
     private Vector3 grabbedLocalPosition;
 
     void Start()
     {
-        cam = Camera.main; // 메인 카메라 참조
+        cam = Camera.main;
 
+        // 플레이어 오브젝트 가져오기
         GameObject player = GameObject.FindWithTag("Player");
         if (player != null)
         {
@@ -65,102 +61,93 @@ public class RaycastObjectMover : MonoBehaviour
 
     void Update()
     {
-        if (cam == null) return;
-
-        // 카메라 중앙 기준으로 레이 쏘기
-        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
-
-        if (drawDebugRay)
-            Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.cyan);
-
-        // 마우스 휠로 레이 거리 조절
-        if (selectedObject == null)  // 오브젝트가 선택되지 않은 경우에만 거리 조절
+        // 좌클릭 시 지팡이 선택 검사
+        if (Input.GetMouseButtonDown(0))
         {
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            rayDistance += scroll * 5f;
-            rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
-        }
-        else
-        {
-            // 오브젝트가 선택된 상태에서 마우스 휠로 거리 조절
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(scroll) > 0.01f)
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
             {
-                grabDistance -= scroll * 5f;
-                grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
+                GameObject hitObj = hit.collider.gameObject;
+
+                // 지팡이 Layer에 속하면 지팡이 선택 실행
+                if (((1 << hitObj.layer) & Wand) != 0)
+                {
+                    SelectWand(hitObj);
+                    return;  // 지팡이 선택만 하고 끝냄
+                }
             }
         }
 
-        // 오브젝트를 선택하지 않았을 때만 감지 및 선택 처리
+        if (cam == null) return;
+
+        // 중앙 화면 기준 Ray 생성
+        Ray centerRay = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        if (drawDebugRay)
+            Debug.DrawRay(centerRay.origin, centerRay.direction * rayDistance, Color.cyan);
+
+        // 마우스 휠로 거리 조절
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (selectedObject == null)
         {
-            HandleHighlighting(ray);
-            HandleSelection(ray);
+            rayDistance += scroll * 5f;
+            rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
+        }
+        else if (Mathf.Abs(scroll) > 0.01f)
+        {
+            grabDistance -= scroll * 5f;
+            grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
         }
 
-        // 우클릭으로 놓기
+        // 잡은 오브젝트가 없으면 하이라이트 & 선택 검사
+        if (selectedObject == null)
+        {
+            HandleHighlighting(centerRay);
+            HandleSelection(centerRay);
+        }
+
+        // 우클릭으로 오브젝트 해제
         if (Input.GetMouseButtonDown(1))
         {
             ReleaseSelectedObject();
         }
 
-        //effect();
-
-        HandleInteraction(ray);
-    }
-
-    public GameObject wand;
-    Vector3 targetPos;
-
-    void effect()
-    {
-
-        Wand wand = GetComponent<Wand>();
-        Vector3 wand_position = wand.transform.position;
-        Debug.DrawLine(wand_position, targetPos, Color.blue);
-        Debug.Log("테스트");
+        // 인터랙션 처리
+        HandleInteraction(centerRay);
     }
 
     void FixedUpdate()
     {
-        // 오브젝트가 선택된 경우 카메라와의 상대 위치를 유지하며 이동
+        // 오브젝트를 잡고 있으면 물리적으로 이동 처리
         if (selectedObject != null && selectedRigidbody != null)
         {
-            // 카메라로부터의 상대 위치 계산
             Vector3 targetPos = cam.transform.position + cam.transform.forward * grabDistance +
                                 cam.transform.right * grabbedLocalPosition.x +
                                 cam.transform.up * grabbedLocalPosition.y - grabOffset;
 
             Vector3 direction = targetPos - selectedRigidbody.position;
 
-            // 플레이어 속도 보정 적용
             Vector3 playerVelocity = playerRigidbody != null ? playerRigidbody.linearVelocity : Vector3.zero;
             Vector3 desiredVelocity = direction.normalized * Mathf.Min(direction.magnitude * 10f, moveForce * Time.fixedDeltaTime);
 
-            // 최종 속도: 목표 지점까지 이동 + 플레이어 속도 반영
             selectedRigidbody.linearVelocity = desiredVelocity + playerVelocity * 0.5f;
 
-            // 카메라의 현재 Y축 회전각 계산
+            // 카메라 회전에 따라 회전 처리
             float currentCameraYRotation = cam.transform.eulerAngles.y;
-
-            // 회전 처리
             Quaternion targetRotation = originalRotation;
 
             if (followCameraRotationY)
             {
-                // 카메라 회전과 오브젝트 회전의 상대적 차이를 유지
                 float yRotationDelta = Mathf.DeltaAngle(initialCameraYRotation, currentCameraYRotation);
                 Vector3 originalEuler = originalRotation.eulerAngles;
                 float targetYRotation = originalEuler.y + yRotationDelta;
-
-                // X와 Z 회전은 그대로 유지하고 Y 회전만 업데이트
                 targetRotation = Quaternion.Euler(originalEuler.x, targetYRotation, originalEuler.z);
             }
 
-            selectedRigidbody.MoveRotation(targetRotation); // 회전 적용
+            selectedRigidbody.MoveRotation(targetRotation);
         }
     }
 
+    // 하이라이트 처리 (Outline)
     void HandleHighlighting(Ray ray)
     {
         bool hitSelectable = false;
@@ -170,21 +157,11 @@ public class RaycastObjectMover : MonoBehaviour
         {
             GameObject hitObj = hit.collider.gameObject;
 
-            // Selectable 레이어 처리
+            // 선택 가능한 오브젝트 하이라이트
             if (((1 << hitObj.layer) & selectableLayer) != 0)
             {
                 hitSelectable = true;
-
-                if (lastOutline != null && lastOutline.gameObject != hitObj)
-                {
-                    lastOutline.enabled = false;
-                    lastOutline = null;
-                }
-
-                if (lastOutline == null)
-                    lastOutline = EnableOutline(hitObj, Color.yellow);
-                else
-                    lastOutline.OutlineColor = Color.yellow;
+                lastOutline = UpdateOutline(hitObj, lastOutline, Color.yellow);
             }
             else if (lastOutline != null)
             {
@@ -192,32 +169,15 @@ public class RaycastObjectMover : MonoBehaviour
                 lastOutline = null;
             }
 
-            // Interactable 레이어 처리
+            // 인터랙트 가능한 오브젝트 하이라이트
             if (((1 << hitObj.layer) & interactableLayer) != 0)
             {
                 hitInteractable = true;
 
                 IInteractable interactable = hitObj.GetComponent<IInteractable>();
-                if (interactable is ButtonActivator button && button.IsPressed)
+                if (!(interactable is ButtonActivator button && button.IsPressed))
                 {
-                    if (lastInteractOutline != null)
-                    {
-                        lastInteractOutline.enabled = false;
-                        lastInteractOutline = null;
-                    }
-                }
-                else
-                {
-                    if (lastInteractOutline != null && lastInteractOutline.gameObject != hitObj)
-                    {
-                        lastInteractOutline.enabled = false;
-                        lastInteractOutline = null;
-                    }
-
-                    if (lastInteractOutline == null)
-                        lastInteractOutline = EnableOutline(hitObj, Color.yellow);
-                    else
-                        lastInteractOutline.OutlineColor = Color.yellow;
+                    lastInteractOutline = UpdateOutline(hitObj, lastInteractOutline, Color.yellow);
                 }
             }
             else if (lastInteractOutline != null)
@@ -225,108 +185,83 @@ public class RaycastObjectMover : MonoBehaviour
                 lastInteractOutline.enabled = false;
                 lastInteractOutline = null;
             }
-
-            // Wand 처리 (추가 처리 필요한 경우 유지)
-            if (((1 << hitObj.layer) & Wand) != 0)
-            {
-                Debug.Log("지팡이 입니다.");
-            }
-        }
-        else
-        {
-            // 아무것도 감지되지 않았을 때 모든 하이라이트 제거
-            ClearHighlight();
         }
 
-        // 선택 가능한 오브젝트 또는 인터랙트 가능한 오브젝트가 아닌 경우만 Clear
         if (!hitSelectable && !hitInteractable)
-        {
             ClearHighlight();
-        }
     }
 
+    // Outline 업데이트
+    Outline UpdateOutline(GameObject obj, Outline current, Color color)
+    {
+        if (current != null && current.gameObject != obj)
+        {
+            current.enabled = false;
+            current = null;
+        }
+
+        if (current == null)
+            current = EnableOutline(obj, color);
+        else
+            current.OutlineColor = color;
+
+        return current;
+    }
+
+    // 오브젝트 선택 처리
     void HandleSelection(Ray ray)
     {
-        // 좌클릭 시 선택 처리
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
-            if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
+            GameObject hitObj = hit.collider.gameObject;
+            if (((1 << hitObj.layer) & selectableLayer) == 0) return;
+
+            selectedObject = hitObj.transform;
+            moveVelocity = Vector3.zero;
+            currentRotationVelocity = 0f;
+            grabOffset = hit.point - selectedObject.position;
+            grabDistance = Vector3.Distance(cam.transform.position, hit.point);
+
+            Vector3 directionToHit = hit.point - cam.transform.position;
+            grabbedLocalPosition = new Vector3(
+                Vector3.Dot(directionToHit, cam.transform.right),
+                Vector3.Dot(directionToHit, cam.transform.up),
+                0);
+
+            originalRotation = selectedObject.rotation;
+            initialCameraYRotation = cam.transform.eulerAngles.y;
+            initialYRotationOffset = Mathf.DeltaAngle(initialCameraYRotation, originalRotation.eulerAngles.y);
+
+            selectedRigidbody = selectedObject.GetComponent<Rigidbody>();
+            if (selectedRigidbody != null)
             {
-                GameObject hitObj = hit.collider.gameObject;
-                if (((1 << hitObj.layer) & selectableLayer) == 0) return;
+                wasKinematic = selectedRigidbody.isKinematic;
+                hadGravity = selectedRigidbody.useGravity;
 
-                selectedObject = hitObj.transform;
-                moveVelocity = Vector3.zero;
-                currentRotationVelocity = 0f;
+                selectedRigidbody.useGravity = false;
+                selectedRigidbody.isKinematic = false;
 
-                // 히트 포인트와 오브젝트 중심 간의 오프셋 계산
-                grabOffset = hit.point - selectedObject.position;
+                objectCollider = selectedRigidbody.GetComponent<Collider>();
+                if (playerCollider != null && objectCollider != null)
+                    Physics.IgnoreCollision(playerCollider, objectCollider, true);
+            }
 
-                // 카메라로부터의 거리 저장
-                grabDistance = Vector3.Distance(cam.transform.position, hit.point);
+            selectedRenderer = selectedObject.GetComponent<Renderer>();
+            selectedOutline = EnableOutline(hitObj, Color.green);
 
-                // 카메라 기준 오브젝트 위치의 로컬 좌표 계산
-                Vector3 directionToHit = hit.point - cam.transform.position;
-                Vector3 forwardDistance = Vector3.Project(directionToHit, cam.transform.forward);
-
-                // 카메라 기준 로컬 좌표 (좌우, 상하) 구하기
-                Vector3 rightComponent = Vector3.Project(directionToHit, cam.transform.right);
-                Vector3 upComponent = Vector3.Project(directionToHit, cam.transform.up);
-
-                float rightDistance = Vector3.Dot(rightComponent, cam.transform.right);
-                float upDistance = Vector3.Dot(upComponent, cam.transform.up);
-
-                grabbedLocalPosition = new Vector3(rightDistance, upDistance, 0);
-
-                // 선택 시 오브젝트의 초기 회전값 저장
-                originalRotation = selectedObject.rotation;
-
-                // 카메라 현재 Y축 회전 저장
-                initialCameraYRotation = cam.transform.eulerAngles.y;
-
-                // 오브젝트와 카메라 간의 Y축 회전 차이 저장
-                initialYRotationOffset = Mathf.DeltaAngle(initialCameraYRotation, originalRotation.eulerAngles.y);
-
-                // Rigidbody 물리 설정 저장 및 비활성화
-                selectedRigidbody = selectedObject.GetComponent<Rigidbody>();
-                if (selectedRigidbody != null)
-                {
-                    wasKinematic = selectedRigidbody.isKinematic;
-                    hadGravity = selectedRigidbody.useGravity;
-
-                    selectedRigidbody.useGravity = false;
-                    selectedRigidbody.isKinematic = false;
-
-                    objectCollider = selectedRigidbody.GetComponent<Collider>();
-
-                    if (playerCollider != null && objectCollider != null)
-                    {
-                        Physics.IgnoreCollision(playerCollider, objectCollider, true);
-                    }
-                }
-
-                selectedRenderer = selectedObject.GetComponent<Renderer>();
-
-                // ✅ Outline 설정 (항상 녹색으로 덮어쓰기)
-                selectedOutline = EnableOutline(hitObj, Color.green);
-                selectedOutline.OutlineColor = Color.green;
-                selectedOutline.enabled = true;
-
-                // 기존 감지용 outline 비활성화
-                if (lastOutline != null && lastOutline != selectedOutline)
-                {
-                    lastOutline.enabled = false;
-                    lastOutline = null;
-                }
+            if (lastOutline != null && lastOutline != selectedOutline)
+            {
+                lastOutline.enabled = false;
+                lastOutline = null;
             }
         }
     }
 
+    // 오브젝트 해제 처리
     void ReleaseSelectedObject()
     {
         if (selectedObject == null) return;
 
-        // Rigidbody 설정 복원
         if (selectedRigidbody != null)
         {
             selectedRigidbody.isKinematic = wasKinematic;
@@ -334,15 +269,12 @@ public class RaycastObjectMover : MonoBehaviour
             selectedRigidbody.linearVelocity = Vector3.zero;
 
             if (playerCollider != null && objectCollider != null)
-            {
                 Physics.IgnoreCollision(playerCollider, objectCollider, false);
-            }
 
             selectedRigidbody = null;
             objectCollider = null;
         }
 
-        // 선택 Outline 비활성화
         if (selectedOutline != null)
         {
             selectedOutline.enabled = false;
@@ -356,7 +288,7 @@ public class RaycastObjectMover : MonoBehaviour
         grabbedLocalPosition = Vector3.zero;
     }
 
-    // 오브젝트에 Outline 컴포넌트 추가하거나 가져오고 색상 설정
+    // Outline 생성
     Outline EnableOutline(GameObject obj, Color color)
     {
         Outline outline = obj.GetComponent<Outline>();
@@ -372,9 +304,6 @@ public class RaycastObjectMover : MonoBehaviour
         return outline;
     }
 
-
-
-    // 하이라이트 제거
     void ClearHighlight()
     {
         if (lastOutline != null)
@@ -389,32 +318,50 @@ public class RaycastObjectMover : MonoBehaviour
         }
     }
 
-    //2024-04-18 추가
-    //현재 선택된 오브젝트를 외부에서 확인
-    public Transform GetSelectedObject()
-    {
-        return selectedObject;
-    }
+    public Transform GetSelectedObject() => selectedObject;
 
-    // 버튼 감지 및 상호작용 처리
+    // 인터랙션 처리 (버튼 등)
     void HandleInteraction(Ray ray)
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
-            if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
+            GameObject hitObj = hit.collider.gameObject;
+            if (((1 << hitObj.layer) & interactableLayer) != 0)
             {
-                GameObject hitObj = hit.collider.gameObject;
-
-                // Interactable 레이어 확인
-                if (((1 << hitObj.layer) & interactableLayer) != 0)
-                {
-                    IInteractable interactable = hitObj.GetComponent<IInteractable>();
-                    if (interactable != null)
-                    {
-                        interactable.Interact();
-                    }
-                }
+                IInteractable interactable = hitObj.GetComponent<IInteractable>();
+                interactable?.Interact();
             }
         }
+    }
+
+    // 지팡이 선택 처리
+    void SelectWand(GameObject wand)
+    {
+        // 기존 지팡이가 있으면 원래 위치로 되돌림
+        if (selectedWand != null && selectedWand != wand)
+        {
+            selectedWand.transform.SetParent(null);  // 부모 해제
+            selectedWand.transform.position = selectedWandOriginalPosition;
+            selectedWand.transform.rotation = selectedWandOriginalRotation;
+
+            Rigidbody prevRb = selectedWand.GetComponent<Rigidbody>();
+            if (prevRb != null)
+                prevRb.isKinematic = false;
+        }
+
+        selectedWand = wand;
+        selectedWandOriginalPosition = wand.transform.position;
+        selectedWandOriginalRotation = wand.transform.rotation;
+
+        // wandPoint의 자식으로 설정하여 플레이어 옆에 고정
+        wand.transform.SetParent(wandPoint);
+        wand.transform.localPosition = Vector3.zero;
+        wand.transform.localRotation = Quaternion.identity;
+
+        Rigidbody rb = wand.GetComponent<Rigidbody>();
+        if (rb != null)
+            rb.isKinematic = true;
+
+        Debug.Log("지팡이 고정됨: " + wand.name);
     }
 }
