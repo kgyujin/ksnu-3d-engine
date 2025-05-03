@@ -543,9 +543,14 @@ public class player_movement : MonoBehaviour
 
         if (isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
-            //anim.SetBool("isJumping", true);
-            //anim.SetTrigger("Wave");
+
             jumpRequested = true;
+        }
+        if (isGrounded && Input.GetKeyDown(KeyCode.P))
+        {
+            //anim.SetBool("isJumping", true);
+            animator.SetTrigger("Wave");
+            //jumpRequested = true;
         }
     }
 
