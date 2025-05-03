@@ -163,71 +163,83 @@ public class RaycastObjectMover : MonoBehaviour
 
     void HandleHighlighting(Ray ray)
     {
-        // 레이가 선택 가능 오브젝트에 닿은 경우
+        bool hitSelectable = false;
+        bool hitInteractable = false;
+
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
 
+            // Selectable 레이어 처리
             if (((1 << hitObj.layer) & selectableLayer) != 0)
             {
-                // 이전 하이라이트가 다른 오브젝트였다면 끄기
+                hitSelectable = true;
+
                 if (lastOutline != null && lastOutline.gameObject != hitObj)
                 {
                     lastOutline.enabled = false;
                     lastOutline = null;
                 }
 
-                // 새로운 오브젝트에 Outline 적용
                 if (lastOutline == null)
-                {
                     lastOutline = EnableOutline(hitObj, Color.yellow);
-                }
                 else
-                {
-                    // 이미 존재할 경우 색상만 노란색으로 설정
                     lastOutline.OutlineColor = Color.yellow;
-                }
+            }
+            else if (lastOutline != null)
+            {
+                lastOutline.enabled = false;
+                lastOutline = null;
             }
 
-            // Interactable 레이어 오브젝트 하이라이트
+            // Interactable 레이어 처리
             if (((1 << hitObj.layer) & interactableLayer) != 0)
             {
-                // 버튼이 이미 눌린 상태인지 확인
+                hitInteractable = true;
+
                 IInteractable interactable = hitObj.GetComponent<IInteractable>();
                 if (interactable is ButtonActivator button && button.IsPressed)
                 {
-                    // 눌린 버튼은 아웃라인 처리 하지 않음
-                    ClearHighlight();
-                    return;
-                }
-
-                // 기존 아웃라인 처리 로직 유지
-                if (lastInteractOutline != null && lastInteractOutline.gameObject != hitObj)
-                {
-                    lastInteractOutline.enabled = false;
-                    lastInteractOutline = null;
-                }
-
-                if (lastInteractOutline == null)
-                {
-                    lastInteractOutline = EnableOutline(hitObj, Color.yellow);
+                    if (lastInteractOutline != null)
+                    {
+                        lastInteractOutline.enabled = false;
+                        lastInteractOutline = null;
+                    }
                 }
                 else
                 {
-                    lastInteractOutline.OutlineColor = Color.yellow;
+                    if (lastInteractOutline != null && lastInteractOutline.gameObject != hitObj)
+                    {
+                        lastInteractOutline.enabled = false;
+                        lastInteractOutline = null;
+                    }
+
+                    if (lastInteractOutline == null)
+                        lastInteractOutline = EnableOutline(hitObj, Color.yellow);
+                    else
+                        lastInteractOutline.OutlineColor = Color.yellow;
                 }
             }
-            else
+            else if (lastInteractOutline != null)
             {
-                ClearHighlight();
+                lastInteractOutline.enabled = false;
+                lastInteractOutline = null;
             }
+
+            // Wand 처리 (추가 처리 필요한 경우 유지)
             if (((1 << hitObj.layer) & Wand) != 0)
             {
                 Debug.Log("지팡이 입니다.");
             }
-
         }
         else
+        {
+            // 아무것도 감지되지 않았을 때 모든 하이라이트 제거
+            ClearHighlight();
+        }
+
+        // 선택 가능한 오브젝트 또는 인터랙트 가능한 오브젝트가 아닌 경우만 Clear
+        if (!hitSelectable && !hitInteractable)
         {
             ClearHighlight();
         }
