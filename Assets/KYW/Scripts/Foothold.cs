@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
 public class Foothold : MonoBehaviour
 {
-    public float pressedY = -0.4f;
+    public float pressedY = -0.22f;
     public float originalY;
     public float moveSpeed = 3f;  // 발판 이동 속도 (부드럽게 조정)
 
@@ -25,7 +25,7 @@ public class Foothold : MonoBehaviour
 
     public void Press()
     {
-        targetY = pressedY;
+        targetY = originalY + pressedY;
     }
 
     public void Release()

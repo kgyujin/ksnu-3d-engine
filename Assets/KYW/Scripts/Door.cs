@@ -3,6 +3,7 @@ using UnityEngine;
 public class Door : MonoBehaviour
 {
     private Vector3 originalPosition;
+    private float moveY = 10f;
     private Vector3 targetPosition;
     public float doorMoveSpeed = 2f;
     private Transform doorTransform;
@@ -16,7 +17,7 @@ public class Door : MonoBehaviour
 
     public void Open()
     {
-        targetPosition = new Vector3(doorTransform.position.x, 15f, doorTransform.position.z);
+        targetPosition = new Vector3(doorTransform.position.x, doorTransform.position.y + moveY, doorTransform.position.z);
     }
 
     public void Close()
