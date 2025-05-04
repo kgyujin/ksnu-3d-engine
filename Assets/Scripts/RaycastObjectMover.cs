@@ -69,12 +69,12 @@ public class RaycastObjectMover : MonoBehaviour
             {
                 GameObject hitObj = hit.collider.gameObject;
 
-                // 지팡이 Layer에 속하면 지팡이 선택 실행
-                if (((1 << hitObj.layer) & Wand) != 0)
-                {
-                    SelectWand(hitObj);
-                    return;  // 지팡이 선택만 하고 끝냄
-                }
+                //// 지팡이 Layer에 속하면 지팡이 선택 실행
+                //if (((1 << hitObj.layer) & Wand) != 0)
+                //{
+                //    SelectWand(hitObj);
+                //    return;  // 지팡이 선택만 하고 끝냄
+                //}
             }
         }
 
@@ -355,33 +355,33 @@ public class RaycastObjectMover : MonoBehaviour
     }
 
     // 지팡이 선택 처리
-    void SelectWand(GameObject wand)
-    {
-        // 기존 지팡이가 있으면 원래 위치로 되돌림
-        if (selectedWand != null && selectedWand != wand)
-        {
-            selectedWand.transform.SetParent(null);  // 부모 해제
-            selectedWand.transform.position = selectedWandOriginalPosition;
-            selectedWand.transform.rotation = selectedWandOriginalRotation;
+    //void SelectWand(GameObject wand)
+    //{
+    //    // 기존 지팡이가 있으면 원래 위치로 되돌림
+    //    if (selectedWand != null && selectedWand != wand)
+    //    {
+    //        selectedWand.transform.SetParent(null);  // 부모 해제
+    //        selectedWand.transform.position = selectedWandOriginalPosition;
+    //        selectedWand.transform.rotation = selectedWandOriginalRotation;
 
-            Rigidbody prevRb = selectedWand.GetComponent<Rigidbody>();
-            if (prevRb != null)
-                prevRb.isKinematic = false;
-        }
+    //        Rigidbody prevRb = selectedWand.GetComponent<Rigidbody>();
+    //        if (prevRb != null)
+    //            prevRb.isKinematic = false;
+    //    }
 
-        selectedWand = wand;
-        selectedWandOriginalPosition = wand.transform.position;
-        selectedWandOriginalRotation = wand.transform.rotation;
+    //    selectedWand = wand;
+    //    selectedWandOriginalPosition = wand.transform.position;
+    //    selectedWandOriginalRotation = wand.transform.rotation;
 
-        // wandPoint의 자식으로 설정하여 플레이어 옆에 고정
-        wand.transform.SetParent(wandPoint);
-        wand.transform.localPosition = Vector3.zero;
-        wand.transform.localRotation = Quaternion.identity;
+    //    // wandPoint의 자식으로 설정하여 플레이어 옆에 고정
+    //    wand.transform.SetParent(wandPoint);
+    //    wand.transform.localPosition = Vector3.zero;
+    //    wand.transform.localRotation = Quaternion.identity;
 
-        Rigidbody rb = wand.GetComponent<Rigidbody>();
-        if (rb != null)
-            rb.isKinematic = true;
+    //    Rigidbody rb = wand.GetComponent<Rigidbody>();
+    //    if (rb != null)
+    //        rb.isKinematic = true;
 
-        Debug.Log("지팡이 고정됨: " + wand.name);
-    }
+    //    Debug.Log("지팡이 고정됨: " + wand.name);
+    //}
 }
