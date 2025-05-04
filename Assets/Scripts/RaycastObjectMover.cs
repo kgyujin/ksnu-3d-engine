@@ -185,6 +185,26 @@ public class RaycastObjectMover : MonoBehaviour
                 lastInteractOutline.enabled = false;
                 lastInteractOutline = null;
             }
+
+            // Wand 처리 (추가 처리 필요한 경우 유지)
+            if (((1 << hitObj.layer) & Wand) != 0)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    ItemSelecteManager itemSelecteManager = GetComponent<ItemSelecteManager>();
+                    if (itemSelecteManager != null)
+                    {
+                        itemSelecteManager.WearItem(hitObj);
+                    }
+
+                    //Debug.Log("지팡이 입니다.");
+                }
+            }
+        }
+        else
+        {
+            // 아무것도 감지되지 않았을 때 모든 하이라이트 제거
+            ClearHighlight();
         }
 
         if (!hitSelectable && !hitInteractable)
