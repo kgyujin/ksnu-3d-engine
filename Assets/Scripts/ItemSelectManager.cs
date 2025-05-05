@@ -1,6 +1,6 @@
 ﻿using System;
 using UnityEngine;
-public class ItemSelecteManager : MonoBehaviour
+public class ItemSelectManager : MonoBehaviour
 {
     public GameObject[] Item;
     public float rightOffset = 0.5f;
@@ -12,7 +12,7 @@ public class ItemSelecteManager : MonoBehaviour
     void Start()
     {
         // 시작할 때 기본 아이템 설정
-        ItemSelecte(key_down);
+        ItemSelect(key_down);
         raycastObjectMover = GetComponent<RaycastObjectMover>();
     }
 
@@ -22,17 +22,17 @@ public class ItemSelecteManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             key_down = 0;
-            ItemSelecte(key_down);
+            ItemSelect(key_down);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             key_down = 1;
-            ItemSelecte(key_down);
+            ItemSelect(key_down);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             key_down = 2;
-            ItemSelecte(key_down);
+            ItemSelect(key_down);
         }
     }
 
@@ -66,10 +66,10 @@ public class ItemSelecteManager : MonoBehaviour
         // 새로운 아이템 활성화
         gameObject.SetActive(true);
         currentEquippedItem = gameObject;
-        ItemSelecte(key_down);
+        ItemSelect(key_down);
     }
 
-    private void ItemSelecte(int index)
+    private void ItemSelect(int index)
     {
         // 기존 장착 아이템이 있으면 비활성화
         if (currentEquippedItem != null)
@@ -95,16 +95,16 @@ public class ItemSelecteManager : MonoBehaviour
         currentEquippedItem = Item[index];
         currentEquippedItem.SetActive(true);
         
-        Wand_item wand_item = currentEquippedItem.GetComponent<Wand_item>();
+        WandItem WandItem = currentEquippedItem.GetComponent<WandItem>();
         
         // 둘 다 존재하는 경우에만 설정
-        if (wand_item != null && raycastObjectMover != null)
+        if (WandItem != null && raycastObjectMover != null)
         {
-            raycastObjectMover.rayDistance = wand_item.raycast_distance;
+            raycastObjectMover.rayDistance = WandItem.raycast_distance;
         }
         else
         {
-            Debug.LogWarning("Wand_item 또는 RaycastObjectMover가 장착된 아이템에 없습니다.");
+            Debug.LogWarning("WandItem 또는 RaycastObjectMover가 장착된 아이템에 없습니다.");
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Camera_test : MonoBehaviour
+public class PlayerTrackingCamera : MonoBehaviour
 {
     [Header("Camera Settings")]
     public Transform cameraTransform;                         // 메인 카메라 트랜스폼

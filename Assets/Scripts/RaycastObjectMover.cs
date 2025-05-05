@@ -191,7 +191,7 @@ public class RaycastObjectMover : MonoBehaviour
             {
                 if (Input.GetMouseButtonDown(0))
                 {
-                    ItemSelecteManager itemSelecteManager = GetComponent<ItemSelecteManager>();
+                    ItemSelectManager itemSelecteManager = GetComponent<ItemSelectManager>();
                     if (itemSelecteManager != null)
                     {
                         itemSelecteManager.WearItem(hitObj);

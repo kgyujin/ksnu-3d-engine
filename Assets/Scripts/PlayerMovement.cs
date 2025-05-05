@@ -508,7 +508,7 @@ public class player_movement : MonoBehaviour
 
     private RaycastHit hit;
 
-    private Camera_test cameras;
+    private PlayerTrackingCamera cameras;
     private Vector3 movement;
     private Vector3 inputDir;
     private Vector3 slopeMovementDir;
@@ -522,7 +522,7 @@ public class player_movement : MonoBehaviour
     void Start()
     {
         player = GetComponent<Rigidbody>();
-        cameras = GetComponent<Camera_test>();
+        cameras = GetComponent<PlayerTrackingCamera>();
         player.constraints = RigidbodyConstraints.FreezeRotation;
 
         animator = GetComponent<Animator>();
