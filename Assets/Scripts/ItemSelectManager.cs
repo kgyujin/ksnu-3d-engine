@@ -1,110 +1,105 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+
 public class ItemSelectManager : MonoBehaviour
 {
-    public GameObject[] Item;
-    public float rightOffset = 0.5f;
-    private GameObject currentEquippedItem; //현재 장착된 아이템
-    RaycastObjectMover raycastObjectMover;
-    int key_down = 0;
+    public GameObject[] Item;            // 아이템 프리팹 배열
+    public Transform weaponslot;         // 손 본에 붙은 WeaponSlot (예: RightHand > WeaponSlot)
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private GameObject currentEquippedItem;
+    private RaycastObjectMover raycastObjectMover;
+
     void Start()
     {
-        // 시작할 때 기본 아이템 설정
-        ItemSelect(key_down);
         raycastObjectMover = GetComponent<RaycastObjectMover>();
+        ItemSelect(0); // 시작 시 1번 아이템 장착
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            key_down = 0;
-            ItemSelect(key_down);
+            ItemSelect(0);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            key_down = 1;
-            ItemSelect(key_down);
+            ItemSelect(1);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            key_down = 2;
-            ItemSelect(key_down);
+            ItemSelect(2);
         }
     }
 
-    public void WearItem(GameObject gameObject)
+    void ItemSelect(int index)
     {
-        // 현재 장착 중인 아이템이 있으면 비활성화
-        if (Item[key_down] != null)
+        if (index < 0 || index >= Item.Length)
         {
-            Item[key_down].SetActive(false);
+            Debug.LogWarning("아이템 인덱스가 잘못되었습니다.");
+            return;
         }
 
-        // 새 아이템을 현재 선택된 슬롯에 저장
-        Item[key_down] = gameObject;
-
-        // 아이템의 물리 속성 처리
-        Rigidbody rb = gameObject.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = true; // 물리 영향 비활성화
-        }
-
-        // 플레이어의 자식으로 설정 (한 몸이 되도록)
-        gameObject.transform.SetParent(transform);
-
-        // 위치 초기화 (로컬 기준)
-        gameObject.transform.localPosition = Vector3.right * rightOffset;
-
-        // 방향 초기화 (필요시)
-        gameObject.transform.localRotation = Quaternion.identity;
-
-        // 새로운 아이템 활성화
-        gameObject.SetActive(true);
-        currentEquippedItem = gameObject;
-        ItemSelect(key_down);
-    }
-
-    private void ItemSelect(int index)
-    {
-        // 기존 장착 아이템이 있으면 비활성화
+        // 기존 장착된 아이템 제거
         if (currentEquippedItem != null)
         {
-            currentEquippedItem.SetActive(false);
+            Destroy(currentEquippedItem);
         }
 
-        // 선택한 슬롯에 아이템이 없는 경우 처리
-        if (Item[index] == null)
+        // 새 아이템 생성 및 무기 슬롯에 장착
+        GameObject newItem = Instantiate(Item[index], weaponslot);
+        newItem.transform.localPosition = Vector3.zero;
+        newItem.transform.localRotation = Quaternion.identity;
+
+        // Animator나 Rigidbody 제거 (필요시)
+        RemoveUnwantedComponents(newItem);
+
+        currentEquippedItem = newItem;
+    }
+
+    public void WearItem(GameObject hitObj)
+    {
+        if (hitObj == null)
         {
-            currentEquippedItem = null;
-
-            // 아이템이 없으면 raycastObjectMover.rayDistance를 8f로 설정
-            if (raycastObjectMover != null)
-            {
-                raycastObjectMover.rayDistance = 8f;
-            }
-
-            return; // 아이템이 없으면 함수 종료
+            Debug.LogWarning("장착할 오브젝트가 없습니다.");
+            return;
         }
 
-        // 아이템이 있으면 활성화
-        currentEquippedItem = Item[index];
-        currentEquippedItem.SetActive(true);
-        
-        WandItem WandItem = currentEquippedItem.GetComponent<WandItem>();
-        
-        // 둘 다 존재하는 경우에만 설정
-        if (WandItem != null && raycastObjectMover != null)
+        // 기존 장착된 아이템 제거
+        if (currentEquippedItem != null)
         {
-            raycastObjectMover.rayDistance = WandItem.raycast_distance;
+            Destroy(currentEquippedItem);
         }
-        else
+
+        // 이미 존재하는 오브젝트를 무기 슬롯으로 이동
+        hitObj.transform.SetParent(weaponslot);
+        hitObj.transform.localPosition = Vector3.zero;
+        hitObj.transform.localRotation = Quaternion.identity;
+
+        RemoveUnwantedComponents(hitObj);
+
+        currentEquippedItem = hitObj;
+    }
+
+    private void RemoveUnwantedComponents(GameObject item)
+    {
+        // 무기에 붙은 Animator 제거 (필요한 경우)
+        Animator animator = item.GetComponent<Animator>();
+        if (animator != null)
         {
-            Debug.LogWarning("WandItem 또는 RaycastObjectMover가 장착된 아이템에 없습니다.");
+            Destroy(animator);
+        }
+
+        // Rigidbody 제거 (물리 작용이 무기 장착 후 불필요한 경우)
+        Rigidbody rb = item.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            Destroy(rb);
+        }
+
+        // Collider 제거 (충돌로 인해 튕겨나가는 현상 방지)
+        Collider col = item.GetComponent<Collider>();
+        if (col != null)
+        {
+            Destroy(col);
         }
     }
 }
