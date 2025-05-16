@@ -43,11 +43,21 @@ public class RespawnTrigger : MonoBehaviour
         else if (((1 << other.gameObject.layer) & selectableLayer) != 0)
         {
             GameObject obj = other.gameObject;
+
+            // 오브젝트가 현재 RaycastObjectMover에 의해 잡혀 있다면 강제로 해제
+            RaycastObjectMover mover = FindObjectOfType<RaycastObjectMover>();
+            if (mover != null && mover.GetSelectedObject() == obj.transform)
+            {
+                mover.ForceReleaseSelectedObject();
+            }
+
             if (_initialPositions.ContainsKey(obj))
             {
+                // 위치 및 회전 복원
                 obj.transform.position = _initialPositions[obj];
                 obj.transform.rotation = _initialRotations[obj];
 
+                // 물리 속도 초기화
                 Rigidbody rb = obj.GetComponent<Rigidbody>();
                 if (rb != null)
                 {

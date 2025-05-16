@@ -40,6 +40,12 @@ public class GameManager : MonoBehaviour
 
     public void RespawnPlayer(GameObject player)
     {
+        RaycastObjectMover mover = FindObjectOfType<RaycastObjectMover>();
+        if (mover != null && mover.GetSelectedObject() != null)
+        {
+            mover.ForceReleaseSelectedObject();  // 잡은 오브젝트 강제 해제
+        }
+
         Vector3 respawnPosition = _lastCheckpointPosition + Vector3.up;
 
         player.transform.position = respawnPosition;

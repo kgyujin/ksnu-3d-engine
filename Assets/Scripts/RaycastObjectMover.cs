@@ -384,4 +384,11 @@ public class RaycastObjectMover : MonoBehaviour
 
     //    Debug.Log("지팡이 고정됨: " + wand.name);
     //}
+
+
+    // 외부에서 현재 잡고 있는 오브젝트 강제 해제(RespawnTrigger)
+    public void ForceReleaseSelectedObject()
+    {
+        ReleaseSelectedObject();
+    }
 }
