@@ -31,7 +31,6 @@ public class ItemSelectManager : MonoBehaviour
         }
     }
 
-    // 등록된 지팡이를 장착하는 함수
     void EquipRegisteredWand(int index)
     {
         if (index < 0 || index >= registeredWands.Length)
@@ -40,10 +39,8 @@ public class ItemSelectManager : MonoBehaviour
             return;
         }
 
-        // 해당 슬롯에 등록된 지팡이가 있으면 장착
         if (registeredWands[index] != null)
         {
-            // 이미 장착된 지팡이와 같은 지팡이인 경우에도 재장착 가능하도록 함
             if (currentEquippedItem != null)
             {
                 currentEquippedItem.SetActive(false);
@@ -51,16 +48,22 @@ public class ItemSelectManager : MonoBehaviour
 
             registeredWands[index].SetActive(true);
             currentEquippedItem = registeredWands[index];
-
-            // 필요시 위치 및 회전 재조정
             ApplyItemTransform(currentEquippedItem);
-
             Debug.Log((index + 1) + "번 등록된 지팡이를 장착했습니다.");
         }
         else
         {
-            // 등록된 지팡이가 없으면 기본 아이템 장착
-            ItemSelect(index);
+            Debug.LogWarning((index + 1) + "번 슬롯에 등록된 지팡이가 없습니다. 기본 아이템 장착을 시도합니다.");
+
+            // Item 배열에 아이템이 있으면 장착 시도
+            if (index < Item.Length)
+            {
+                ItemSelect(index);
+            }
+            else
+            {
+                Debug.LogError("기본 아이템도 존재하지 않습니다. Item 배열 확인 필요.");
+            }
         }
     }
 
