@@ -12,8 +12,8 @@ public class WandLineDrawer : MonoBehaviour
     {
         lineRenderer = GetComponent<LineRenderer>();
         lineRenderer.positionCount = 2;
-        lineRenderer.startWidth = 0.01f;
-        lineRenderer.endWidth = 0.005f;
+        lineRenderer.startWidth = 0.03f;
+        lineRenderer.endWidth = 0.01f;
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
         lineRenderer.startColor = Color.cyan;
         lineRenderer.endColor = Color.blue;
