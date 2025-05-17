@@ -3,7 +3,6 @@ using UnityEngine;
 public class RaycastObjectMover : MonoBehaviour
 {
     [Header("감지 설정")]
-
     public Transform wandPoint;  // 플레이어 옆에 지팡이를 붙일 위치
     private GameObject selectedWand;  // 현재 선택된 지팡이
     private Vector3 selectedWandOriginalPosition;  // 지팡이 원래 위치 저장용
@@ -46,6 +45,10 @@ public class RaycastObjectMover : MonoBehaviour
     private float grabDistance = 0f;
     private Vector3 grabbedLocalPosition;
 
+    // 지팡이가 선택됐는지 여부를 확인하기 위한 속성 추가
+    public bool IsWandSelected { get { return selectedWand != null; } }
+    public Transform WandTip { get { return selectedWand != null ? selectedWand.transform : null; } }
+
     void Start()
     {
         cam = Camera.main;
@@ -69,12 +72,18 @@ public class RaycastObjectMover : MonoBehaviour
             {
                 GameObject hitObj = hit.collider.gameObject;
 
-                //// 지팡이 Layer에 속하면 지팡이 선택 실행
-                //if (((1 << hitObj.layer) & Wand) != 0)
-                //{
-                //    SelectWand(hitObj);
-                //    return;  // 지팡이 선택만 하고 끝냄
-                //}
+                // 지팡이 Layer에 속하면 지팡이 선택 실행
+                if (((1 << hitObj.layer) & Wand) != 0)
+                {
+                    // ItemSelectManager 사용 (기존 코드대로)
+                    ItemSelectManager itemSelecteManager = GetComponent<ItemSelectManager>();
+                    if (itemSelecteManager != null)
+                    {
+                        itemSelecteManager.WearItem(hitObj);
+                        selectedWand = hitObj; // 지팡이 선택 상태 업데이트
+                    }
+                    return;  // 지팡이 선택만 하고 끝냄
+                }
             }
         }
 
@@ -186,7 +195,7 @@ public class RaycastObjectMover : MonoBehaviour
                 lastInteractOutline = null;
             }
 
-            // Wand 처리 (추가 처리 필요한 경우 유지)
+            // Wand 처리
             if (((1 << hitObj.layer) & Wand) != 0)
             {
                 if (Input.GetMouseButtonDown(0))
@@ -195,9 +204,8 @@ public class RaycastObjectMover : MonoBehaviour
                     if (itemSelecteManager != null)
                     {
                         itemSelecteManager.WearItem(hitObj);
+                        selectedWand = hitObj; // 지팡이 선택 상태 업데이트
                     }
-
-                    //Debug.Log("지팡이 입니다.");
                 }
             }
         }
@@ -231,6 +239,9 @@ public class RaycastObjectMover : MonoBehaviour
     // 오브젝트 선택 처리
     void HandleSelection(Ray ray)
     {
+        // 지팡이가 선택되지 않은 상태에서는 선택 불가능하게 수정
+        if (!IsWandSelected) return;
+
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
@@ -354,41 +365,15 @@ public class RaycastObjectMover : MonoBehaviour
         }
     }
 
-    // 지팡이 선택 처리
-    //void SelectWand(GameObject wand)
-    //{
-    //    // 기존 지팡이가 있으면 원래 위치로 되돌림
-    //    if (selectedWand != null && selectedWand != wand)
-    //    {
-    //        selectedWand.transform.SetParent(null);  // 부모 해제
-    //        selectedWand.transform.position = selectedWandOriginalPosition;
-    //        selectedWand.transform.rotation = selectedWandOriginalRotation;
-
-    //        Rigidbody prevRb = selectedWand.GetComponent<Rigidbody>();
-    //        if (prevRb != null)
-    //            prevRb.isKinematic = false;
-    //    }
-
-    //    selectedWand = wand;
-    //    selectedWandOriginalPosition = wand.transform.position;
-    //    selectedWandOriginalRotation = wand.transform.rotation;
-
-    //    // wandPoint의 자식으로 설정하여 플레이어 옆에 고정
-    //    wand.transform.SetParent(wandPoint);
-    //    wand.transform.localPosition = Vector3.zero;
-    //    wand.transform.localRotation = Quaternion.identity;
-
-    //    Rigidbody rb = wand.GetComponent<Rigidbody>();
-    //    if (rb != null)
-    //        rb.isKinematic = true;
-
-    //    Debug.Log("지팡이 고정됨: " + wand.name);
-    //}
-
-
     // 외부에서 현재 잡고 있는 오브젝트 강제 해제(RespawnTrigger)
     public void ForceReleaseSelectedObject()
     {
         ReleaseSelectedObject();
+    }
+
+    // 지팡이 해제 처리
+    public void UnselectWand()
+    {
+        selectedWand = null;
     }
 }
