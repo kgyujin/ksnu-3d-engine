@@ -4,7 +4,6 @@ public class ItemSelectManager : MonoBehaviour
 {
     public GameObject[] Item;            // 아이템 프리팹 배열
     public Transform weaponslot;         // 손 본에 붙은 WeaponSlot (예: RightHand > WeaponSlot)
-
     private GameObject currentEquippedItem;
     private RaycastObjectMover raycastObjectMover;
 
@@ -38,20 +37,31 @@ public class ItemSelectManager : MonoBehaviour
             return;
         }
 
-        // 기존 장착된 아이템 제거
         if (currentEquippedItem != null)
         {
             Destroy(currentEquippedItem);
         }
 
-        // 새 아이템 생성 및 무기 슬롯에 장착
-        GameObject newItem = Instantiate(Item[index], weaponslot);
+        // 새 아이템 인스턴스화 후 무기 슬롯에 장착
+        GameObject newItem = Instantiate(Item[index]);
+        newItem.transform.SetParent(weaponslot, false); // 부모 설정
+
+        // WandItem에서 transform 값 받아 적용
+        WandItem wandItem = newItem.GetComponentInChildren<WandItem>();
+        if (wandItem != null)
+        {
+            newItem.transform.localPosition = wandItem.localPosition;
+            newItem.transform.localRotation = Quaternion.Euler(wandItem.localRotation);
+            newItem.transform.localScale = wandItem.localScale;
+        }
+        else
+        {
         newItem.transform.localPosition = Vector3.zero;
         newItem.transform.localRotation = Quaternion.identity;
+            newItem.transform.localScale = Vector3.one;
+        }
 
-        // Animator나 Rigidbody 제거 (필요시)
         RemoveUnwantedComponents(newItem);
-
         currentEquippedItem = newItem;
     }
 
@@ -63,7 +73,6 @@ public class ItemSelectManager : MonoBehaviour
             return;
         }
 
-        // 기존 장착된 아이템 제거
         if (currentEquippedItem != null)
         {
             Destroy(currentEquippedItem);
@@ -75,20 +84,17 @@ public class ItemSelectManager : MonoBehaviour
         hitObj.transform.localRotation = Quaternion.identity;
 
         RemoveUnwantedComponents(hitObj);
-
         currentEquippedItem = hitObj;
     }
 
     private void RemoveUnwantedComponents(GameObject item)
     {
-        // 무기에 붙은 Animator 제거 (필요한 경우)
         Animator animator = item.GetComponent<Animator>();
         if (animator != null)
         {
             Destroy(animator);
         }
 
-        // Rigidbody 제거 (물리 작용이 무기 장착 후 불필요한 경우)
         Rigidbody rb = item.GetComponent<Rigidbody>();
         if (rb != null)
         {
