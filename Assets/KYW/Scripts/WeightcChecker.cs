@@ -16,7 +16,7 @@ public class WeightChecker : MonoBehaviour
         foothold = GetComponent<Foothold>();
         door = GetComponentInChildren<Door>();
 
-        Debug.Log("[WeightChecker] 초기화 완료");
+        //Debug.Log("[WeightChecker] 초기화 완료");
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -25,7 +25,7 @@ public class WeightChecker : MonoBehaviour
         if (rb != null)
         {
             trackedBodies.Add(rb);
-            Debug.Log($"[충돌 시작] 추가됨: {rb.name}, 질량 = {rb.mass}");
+            //Debug.Log($"[충돌 시작] 추가됨: {rb.name}, 질량 = {rb.mass}");
         }
     }
 
@@ -35,7 +35,7 @@ public class WeightChecker : MonoBehaviour
         if (rb != null)
         {
             trackedBodies.Remove(rb);
-            Debug.Log($"[충돌 종료] 제거됨: {rb.name}, 질량 = {rb.mass}");
+            //Debug.Log($"[충돌 종료] 제거됨: {rb.name}, 질량 = {rb.mass}");
         }
     }
 
@@ -46,7 +46,7 @@ public class WeightChecker : MonoBehaviour
         if (rb != null && !trackedBodies.Contains(rb))
         {
             trackedBodies.Add(rb);
-            Debug.Log($"[충돌 지속] 추가됨: {rb.name}, 질량 = {rb.mass}");
+            //Debug.Log($"[충돌 지속] 추가됨: {rb.name}, 질량 = {rb.mass}");
         }
     }
 
@@ -61,7 +61,7 @@ public class WeightChecker : MonoBehaviour
                 totalMass += rb.mass;
         }
 
-        Debug.Log($"[무게 측정] 현재 총 질량: {totalMass} / 임계값: {pressMinMass}");
+        //Debug.Log($"[무게 측정] 현재 총 질량: {totalMass} / 임계값: {pressMinMass}");
 
         // 질량이 임계값 이상이면 발판을 눌러주고 문을 엽니다
         if (totalMass >= pressMinMass && !isPressed)
@@ -69,7 +69,7 @@ public class WeightChecker : MonoBehaviour
             foothold.Press();
             door.Open();
             isPressed = true;
-            Debug.Log($"[상태 변화] 임계값 도달 → 발판 눌림 & 문 열림 (총 질량: {totalMass})");
+           // Debug.Log($"[상태 변화] 임계값 도달 → 발판 눌림 & 문 열림 (총 질량: {totalMass})");
         }
         // 임계값 미만이면 발판을 원위치하고 문을 닫습니다
         else if (totalMass < pressMinMass && isPressed)
@@ -77,7 +77,7 @@ public class WeightChecker : MonoBehaviour
             foothold.Release();
             door.Close();
             isPressed = false;
-            Debug.Log($"[상태 변화] 임계값 미달 → 발판 원위치 & 문 닫힘 (총 질량: {totalMass})");
+           // Debug.Log($"[상태 변화] 임계값 미달 → 발판 원위치 & 문 닫힘 (총 질량: {totalMass})");
         }
     }
 }
