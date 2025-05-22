@@ -1,13 +1,23 @@
 ﻿using UnityEngine;
+
 public class ItemSelectManager : MonoBehaviour
 {
+    [Header("아이템 설정")]
     public GameObject[] Item;            // 아이템 프리팹 배열
+
+    [Header("장착 슬롯")]
     public Transform weaponslot;         // 손 본에 붙은 WeaponSlot (예: RightHand > WeaponSlot)
-    private GameObject currentEquippedItem;
+    public Transform backslot;           // 등 본에 붙은 BackSlot (예: Spine > BackSlot)
+
+    private GameObject currentEquippedWeapon;
+    private GameObject currentEquippedBackItem;
     private RaycastObjectMover raycastObjectMover;
 
     // 숫자키에 등록된 지팡이를 저장하는 배열
     private GameObject[] registeredWands = new GameObject[3];
+
+    // 등 아이템을 저장하는 변수 (하나만 장착 가능하다고 가정)
+    private GameObject registeredBackItem;
 
     void Start()
     {
@@ -29,6 +39,10 @@ public class ItemSelectManager : MonoBehaviour
         {
             EquipRegisteredWand(2);
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha4)) // 4번키로 등 아이템 장착/해제
+        {
+            ToggleBackItem();
+        }
     }
 
     void EquipRegisteredWand(int index)
@@ -41,14 +55,14 @@ public class ItemSelectManager : MonoBehaviour
 
         if (registeredWands[index] != null)
         {
-            if (currentEquippedItem != null)
+            if (currentEquippedWeapon != null)
             {
-                currentEquippedItem.SetActive(false);
+                currentEquippedWeapon.SetActive(false);
             }
 
             registeredWands[index].SetActive(true);
-            currentEquippedItem = registeredWands[index];
-            ApplyItemTransform(currentEquippedItem);
+            currentEquippedWeapon = registeredWands[index];
+            ApplyItemTransform(currentEquippedWeapon);
             Debug.Log((index + 1) + "번 등록된 지팡이를 장착했습니다.");
         }
         else
@@ -67,6 +81,21 @@ public class ItemSelectManager : MonoBehaviour
         }
     }
 
+    void ToggleBackItem()
+    {
+        if (registeredBackItem != null)
+        {
+            bool isActive = registeredBackItem.activeInHierarchy;
+            registeredBackItem.SetActive(!isActive);
+            currentEquippedBackItem = isActive ? null : registeredBackItem;
+            Debug.Log("등 아이템을 " + (isActive ? "해제" : "장착") + "했습니다.");
+        }
+        else
+        {
+            Debug.LogWarning("등록된 등 아이템이 없습니다.");
+        }
+    }
+
     void ItemSelect(int index)
     {
         if (index < 0 || index >= Item.Length)
@@ -75,10 +104,10 @@ public class ItemSelectManager : MonoBehaviour
             return;
         }
 
-        // 기존 장착된 아이템 비활성화
-        if (currentEquippedItem != null)
+        // 기존 장착된 무기 아이템 비활성화
+        if (currentEquippedWeapon != null)
         {
-            currentEquippedItem.SetActive(false);
+            currentEquippedWeapon.SetActive(false);
         }
 
         // 이미 해당 슬롯에 등록된 아이템이 있는지 확인
@@ -91,9 +120,9 @@ public class ItemSelectManager : MonoBehaviour
             ApplyItemTransform(newItem);
 
             // Animator나 Rigidbody 제거 (필요시)
-            RemoveUnwantedComponents(newItem);
+            RemoveUnwantedComponents(newItem, false); // 무기는 콜라이더 제거
 
-            currentEquippedItem = newItem;
+            currentEquippedWeapon = newItem;
 
             // 해당 슬롯에 아이템 등록
             registeredWands[index] = newItem;
@@ -102,7 +131,7 @@ public class ItemSelectManager : MonoBehaviour
         {
             // 이미 등록된 아이템이 있으면 활성화
             registeredWands[index].SetActive(true);
-            currentEquippedItem = registeredWands[index];
+            currentEquippedWeapon = registeredWands[index];
         }
     }
 
@@ -114,10 +143,32 @@ public class ItemSelectManager : MonoBehaviour
             return;
         }
 
-        // 기존 장착된 아이템 비활성화
-        if (currentEquippedItem != null)
+        // 아이템 타입 확인
+        WandItem wandItem = hitObj.GetComponent<WandItem>();
+        BackItem backItem = hitObj.GetComponent<BackItem>();
+
+        if (backItem != null)
         {
-            currentEquippedItem.SetActive(false);
+            // 등 아이템 장착
+            WearBackItem(hitObj);
+        }
+        else if (wandItem != null)
+        {
+            // 무기 아이템 장착
+            WearWeaponItem(hitObj);
+        }
+        else
+        {
+            Debug.LogWarning("알 수 없는 아이템 타입입니다.");
+        }
+    }
+
+    private void WearWeaponItem(GameObject hitObj)
+    {
+        // 기존 장착된 무기 비활성화
+        if (currentEquippedWeapon != null)
+        {
+            currentEquippedWeapon.SetActive(false);
         }
 
         // 이미 존재하는 오브젝트를 무기 슬롯으로 이동
@@ -125,12 +176,33 @@ public class ItemSelectManager : MonoBehaviour
 
         // WandItem 컴포넌트가 있는지 확인하고 적용
         ApplyItemTransform(hitObj);
-        RemoveUnwantedComponents(hitObj);
+        RemoveUnwantedComponents(hitObj, false); // 무기는 콜라이더 제거
 
         // Ray로 선택한 지팡이를 숫자키 1, 2, 3에 순서대로 등록
         RegisterWandToNextSlot(hitObj);
 
-        currentEquippedItem = hitObj;
+        currentEquippedWeapon = hitObj;
+        Debug.Log("무기를 장착했습니다.");
+    }
+
+    private void WearBackItem(GameObject hitObj)
+    {
+        // 기존 등 아이템이 있으면 제거
+        if (registeredBackItem != null)
+        {
+            Destroy(registeredBackItem);
+        }
+
+        // 캐릭터(this.transform)의 자식으로 설정
+        hitObj.transform.SetParent(this.transform);
+
+        // BackItem 컴포넌트 적용 (캐릭터 기준 등방향 위치 설정)
+        ApplyBackItemTransform(hitObj);
+        RemoveUnwantedComponents(hitObj, true); // 등 아이템은 콜라이더 유지
+
+        registeredBackItem = hitObj;
+        currentEquippedBackItem = hitObj;
+        Debug.Log("등 아이템을 장착했습니다.");
     }
 
     // Ray로 선택한 지팡이를 다음 빈 슬롯에 등록하는 함수
@@ -182,7 +254,29 @@ public class ItemSelectManager : MonoBehaviour
         }
     }
 
-    private void RemoveUnwantedComponents(GameObject item)
+    private void ApplyBackItemTransform(GameObject item)
+    {
+        // BackItem 컴포넌트가 있는지 확인
+        BackItem backItem = item.GetComponent<BackItem>();
+        if (backItem != null)
+        {
+            // BackItem에서 지정한 Transform 값을 적용 (캐릭터 로컬 좌표 기준)
+            item.transform.localPosition = backItem.equipPosition;
+            item.transform.localRotation = Quaternion.Euler(backItem.equipRotation);
+            item.transform.localScale = backItem.equipScale;
+            Debug.Log("등 아이템 장착 완료 - 위치: " + backItem.equipPosition + ", 회전: " + backItem.equipRotation);
+        }
+        else
+        {
+            // 기본 위치와 회전 적용 (등 뒤쪽으로 일정 거리)
+            // 캐릭터의 로컬 좌표계에서 -Z방향이 등 방향
+            item.transform.localPosition = new Vector3(0f, 1.0f, -1.0f); // 등 뒤로 1m, 위로 1m
+            item.transform.localRotation = Quaternion.identity;
+            item.transform.localScale = Vector3.one;
+        }
+    }
+
+    private void RemoveUnwantedComponents(GameObject item, bool keepCollider)
     {
         // 무기에 붙은 Animator 제거 (필요한 경우)
         Animator animator = item.GetComponent<Animator>();
@@ -198,11 +292,14 @@ public class ItemSelectManager : MonoBehaviour
             Destroy(rb);
         }
 
-        // Collider 제거 (충돌로 인해 튕겨나가는 현상 방지)
-        Collider col = item.GetComponent<Collider>();
-        if (col != null)
+        // 콜라이더 제거 여부 결정 (등 아이템은 유지, 무기는 제거)
+        if (!keepCollider)
         {
-            Destroy(col);
+            Collider col = item.GetComponent<Collider>();
+            if (col != null)
+            {
+                Destroy(col);
+            }
         }
     }
 }
