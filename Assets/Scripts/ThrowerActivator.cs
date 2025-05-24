@@ -3,16 +3,16 @@ using UnityEngine;
 
 public class ThrowerActivator : MonoBehaviour, IInteractable
 {
-    [Tooltip("버튼을 누르면 회전시킬 오브젝트들")]
     public GameObject[] targetObjects;
 
-    [Tooltip("회전시 적용할 X축 각도 (절대값)")]
-    public float targetXRotation = 45f;
+    [Header("회전 설정")]
+    public float targetZRotation = 45f;
 
-    [Tooltip("회전 애니메이션 지속 시간 (초)")]
-    public float rotateDuration = 0.3f;
+    [Header("절대 위치 설정 (로컬 좌표 기준)")]
+    public Vector3 targetPosition;
 
-    [Tooltip("회전 후 대기 시간 (초)")]
+    [Header("애니메이션 설정")]
+    public float moveDuration = 0.1f;   // 빠르게 보이도록 짧게
     public float holdDuration = 0.2f;
 
     private bool isPressed = false;
@@ -21,7 +21,7 @@ public class ThrowerActivator : MonoBehaviour, IInteractable
     private Color _originalColor;
     private Color _pressedColor = Color.red;
 
-    public ThrowerPlatform throwerPlatform;  // 인스펙터에서 연결
+    public ThrowerPlatformParents throwerPlatform;
 
     private ButtonPushEffect _pushEffect;
 
@@ -50,52 +50,106 @@ public class ThrowerActivator : MonoBehaviour, IInteractable
         if (_pushEffect != null)
             _pushEffect.StartPushEffect();
 
+        StartCoroutine(RotateAllAndThrow());
+    }
+
+    private IEnumerator RotateAllAndThrow()
+    {
         foreach (GameObject obj in targetObjects)
         {
             if (obj != null)
-                StartCoroutine(RotateAndReturn(obj.transform, targetXRotation, rotateDuration, holdDuration));
+                yield return RotateAndMoveLerp(obj.transform, targetZRotation, targetPosition, moveDuration, holdDuration);
         }
-    }
 
-    private IEnumerator RotateAndReturn(Transform target, float newXAngle, float duration, float waitTime)
-    {
-        float originalX = target.eulerAngles.x;
-        Quaternion originalRot = Quaternion.Euler(originalX, -90f, -90f);
-        Quaternion targetRot = Quaternion.Euler(newXAngle, -90f, -90f);
-
-        float elapsed = 0f;
-
-        while (elapsed < duration)
+        if (throwerPlatform != null)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            target.rotation = Quaternion.Slerp(originalRot, targetRot, t);
-            yield return null;
+            throwerPlatform.LaunchObjects();
         }
-
-        target.rotation = targetRot;
-
-        yield return new WaitForSeconds(waitTime);
-
-        elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            target.rotation = Quaternion.Slerp(targetRot, originalRot, t);
-            yield return null;
-        }
-
-        target.rotation = originalRot;
 
         isPressed = false;
 
         if (_renderer != null)
             _renderer.material.color = _originalColor;
+    }
 
-        if (throwerPlatform != null)
+    private IEnumerator RotateAndMoveLerp(Transform target, float newZAngle, Vector3 targetLocalPos, float duration, float waitTime)
+    {
+        Quaternion originalRot = target.rotation;
+        Quaternion targetRot = Quaternion.Euler(target.eulerAngles.x, target.eulerAngles.y, newZAngle);
+
+        Vector3 originalLocalPos = target.localPosition;
+
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
-            throwerPlatform.ThrowCubes();  // 투척은 여기서 전적으로 처리
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            Quaternion lerpedRot = Quaternion.Slerp(originalRot, targetRot, t);
+            Vector3 lerpedLocalPos = Vector3.Lerp(originalLocalPos, targetLocalPos, t);
+
+            if (rb != null && rb.isKinematic)
+            {
+                rb.MoveRotation(lerpedRot);
+                rb.MovePosition(target.parent.TransformPoint(lerpedLocalPos)); // 로컬 → 월드
+            }
+            else
+            {
+                target.rotation = lerpedRot;
+                target.localPosition = lerpedLocalPos;
+            }
+
+            yield return null;
+        }
+
+        if (rb != null && rb.isKinematic)
+        {
+            rb.MoveRotation(targetRot);
+            rb.MovePosition(target.parent.TransformPoint(targetLocalPos));
+        }
+        else
+        {
+            target.rotation = targetRot;
+            target.localPosition = targetLocalPos;
+        }
+
+        yield return new WaitForSeconds(waitTime);
+
+        // 복원
+        elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            Quaternion lerpedRot = Quaternion.Slerp(targetRot, originalRot, t);
+            Vector3 lerpedLocalPos = Vector3.Lerp(targetLocalPos, originalLocalPos, t);
+
+            if (rb != null && rb.isKinematic)
+            {
+                rb.MoveRotation(lerpedRot);
+                rb.MovePosition(target.parent.TransformPoint(lerpedLocalPos));
+            }
+            else
+            {
+                target.rotation = lerpedRot;
+                target.localPosition = lerpedLocalPos;
+            }
+
+            yield return null;
+        }
+
+        if (rb != null && rb.isKinematic)
+        {
+            rb.MoveRotation(originalRot);
+            rb.MovePosition(target.parent.TransformPoint(originalLocalPos));
+        }
+        else
+        {
+            target.rotation = originalRot;
+            target.localPosition = originalLocalPos;
         }
     }
 }
