@@ -62,6 +62,12 @@ public class PauseMenuUI : MonoBehaviour
         ResumeGame();
     }
 
+    public void OnLoadCheckpointButton()
+    {
+        Time.timeScale = 1f; // 시간 정지 해제
+        GameManager.Instance.ReloadSceneFromCheckpoint();
+    }
+
     public void OnMainMenuButton()
     {
         Time.timeScale = 1f;
