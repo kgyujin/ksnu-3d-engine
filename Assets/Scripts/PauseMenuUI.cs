@@ -1,9 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class PauseMenuUI : MonoBehaviour
 {
     [SerializeField] private GameObject pauseMenuUI;
+    [SerializeField] private GameObject checkpointNoticeUI;
+    [SerializeField] private float checkpointNoticeDuration = 2f;
 
     private bool isPaused = false;
 
@@ -14,6 +17,8 @@ public class PauseMenuUI : MonoBehaviour
 
         if (pauseMenuUI != null)
             pauseMenuUI.SetActive(false);
+        if (checkpointNoticeUI != null)
+            checkpointNoticeUI.SetActive(false);
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -61,5 +66,34 @@ public class PauseMenuUI : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
+    }
+
+    public void OnRespawnFromCheckpointButton()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            GameManager.Instance.RespawnPlayer(player);
+            ResumeGame();
+        }
+    }
+
+    public void ShowCheckpointNotice()
+    {
+        if (checkpointNoticeUI != null)
+        {
+            checkpointNoticeUI.SetActive(true);
+            StartCoroutine(HideCheckpointNoticeCoroutine());
+        }
+    }
+
+    private IEnumerator HideCheckpointNoticeCoroutine()
+    {
+        yield return new WaitForSecondsRealtime(checkpointNoticeDuration);
+
+        if (checkpointNoticeUI != null)
+        {
+            checkpointNoticeUI.SetActive(false);
+        }
     }
 }

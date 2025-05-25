@@ -35,6 +35,16 @@ public class GameManager : MonoBehaviour
 
             _lastCheckpointPosition = checkpointPos;
             _lastCheckpointId = checkpointId;
+
+            if (checkpointId != 0)
+            {
+                PauseMenuUI pauseUI = FindObjectOfType<PauseMenuUI>();
+                if (pauseUI != null)
+                {
+                    pauseUI.ShowCheckpointNotice();
+                }
+
+            }
         }
     }
 
