@@ -95,17 +95,17 @@ public class RaycastObjectMover : MonoBehaviour
             Debug.DrawRay(centerRay.origin, centerRay.direction * rayDistance, Color.cyan);
 
         // 마우스 휠로 거리 조절
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (selectedObject == null)
-        {
-            rayDistance += scroll * 5f;
-            rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
-        }
-        else if (Mathf.Abs(scroll) > 0.01f)
-        {
-            grabDistance -= scroll * 5f;
-            grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
-        }
+        //float scroll = Input.GetAxis("Mouse ScrollWheel");
+        //if (selectedObject == null)
+        //{
+        //    rayDistance += scroll * 5f;
+        //    rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
+        //}
+        //else if (Mathf.Abs(scroll) > 0.01f)
+        //{
+        //    grabDistance -= scroll * 5f;
+        //    grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
+        //}
 
         // 잡은 오브젝트가 없으면 하이라이트 & 선택 검사
         if (selectedObject == null)
@@ -375,5 +375,11 @@ public class RaycastObjectMover : MonoBehaviour
     public void UnselectWand()
     {
         selectedWand = null;
+    }
+
+    public void SetRaycastDistance(float distance)
+    {
+        rayDistance = distance;
+        //Debug.Log("Raycast 거리 설정됨: " + raycastDistance);
     }
 }
