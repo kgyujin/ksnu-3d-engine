@@ -62,122 +62,67 @@ public class RaycastObjectMover : MonoBehaviour
         }
     }
 
-    //void Update()
-    //{
-    //    // 좌클릭 시 지팡이 선택 검사
-    //    if (Input.GetMouseButtonDown(0))
-    //    {
-    //        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-    //        if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
-    //        {
-    //            GameObject hitObj = hit.collider.gameObject;
-
-    //            // 지팡이 Layer에 속하면 지팡이 선택 실행
-    //            if (((1 << hitObj.layer) & Wand) != 0)
-    //            {
-    //                // ItemSelectManager 사용 (기존 코드대로)
-    //                ItemSelectManager itemSelecteManager = GetComponent<ItemSelectManager>();
-    //                if (itemSelecteManager != null)
-    //                {
-    //                    itemSelecteManager.WearItem(hitObj);
-    //                    selectedWand = hitObj; // 지팡이 선택 상태 업데이트
-    //                }
-    //                return;  // 지팡이 선택만 하고 끝냄
-    //            }
-    //        }
-    //    }
-
-    //    if (cam == null) return;
-
-    //    // 중앙 화면 기준 Ray 생성
-    //    Ray centerRay = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
-    //    if (drawDebugRay)
-    //        Debug.DrawRay(centerRay.origin, centerRay.direction * rayDistance, Color.cyan);
-
-    //    // 마우스 휠로 거리 조절
-    //    float scroll = Input.GetAxis("Mouse ScrollWheel");
-    //    if (selectedObject == null)
-    //    {
-    //        rayDistance += scroll * 5f;
-    //        rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
-    //    }
-    //    else if (Mathf.Abs(scroll) > 0.01f)
-    //    {
-    //        grabDistance -= scroll * 5f;
-    //        grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
-    //    }
-
-    //    // 잡은 오브젝트가 없으면 하이라이트 & 선택 검사
-    //    if (selectedObject == null)
-    //    {
-    //        HandleHighlighting(centerRay);
-    //        HandleSelection(centerRay);
-    //    }
-
-    //    // 우클릭으로 오브젝트 해제
-    //    if (Input.GetMouseButtonDown(1))
-    //    {
-    //        ReleaseSelectedObject();
-    //    }
-
-    //    // 인터랙션 처리
-    //    HandleInteraction(centerRay);
-    //}
-
     void Update()
     {
+        // 좌클릭 시 지팡이 선택 검사
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+            if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
             {
                 GameObject hitObj = hit.collider.gameObject;
 
+                // 지팡이 Layer에 속하면 지팡이 선택 실행
                 if (((1 << hitObj.layer) & Wand) != 0)
                 {
+                    // ItemSelectManager 사용 (기존 코드대로)
                     ItemSelectManager itemSelecteManager = GetComponent<ItemSelectManager>();
                     if (itemSelecteManager != null)
                     {
                         itemSelecteManager.WearItem(hitObj);
-                        selectedWand = hitObj;
+                        selectedWand = hitObj; // 지팡이 선택 상태 업데이트
                     }
-                    return;
+                    return;  // 지팡이 선택만 하고 끝냄
                 }
             }
         }
 
         if (cam == null) return;
 
+        // 중앙 화면 기준 Ray 생성
         Ray centerRay = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         if (drawDebugRay)
-            Debug.DrawRay(centerRay.origin, centerRay.direction * GetRayDistance(), Color.cyan);
+            Debug.DrawRay(centerRay.origin, centerRay.direction * rayDistance, Color.cyan);
 
+        // 마우스 휠로 거리 조절
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (selectedObject == null && selectedWand == null)
+        if (selectedObject == null)
         {
             rayDistance += scroll * 5f;
             rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
         }
-        else if (selectedObject != null && Mathf.Abs(scroll) > 0.01f)
+        else if (Mathf.Abs(scroll) > 0.01f)
         {
             grabDistance -= scroll * 5f;
             grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
         }
 
+        // 잡은 오브젝트가 없으면 하이라이트 & 선택 검사
         if (selectedObject == null)
         {
             HandleHighlighting(centerRay);
             HandleSelection(centerRay);
         }
 
+        // 우클릭으로 오브젝트 해제
         if (Input.GetMouseButtonDown(1))
         {
             ReleaseSelectedObject();
         }
 
+        // 인터랙션 처리
         HandleInteraction(centerRay);
     }
-
 
     void FixedUpdate()
     {
@@ -217,7 +162,7 @@ public class RaycastObjectMover : MonoBehaviour
         bool hitSelectable = false;
         bool hitInteractable = false;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
 
@@ -297,7 +242,7 @@ public class RaycastObjectMover : MonoBehaviour
         // 지팡이가 선택되지 않은 상태에서는 선택 불가능하게 수정
         if (!IsWandSelected) return;
 
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
             if (((1 << hitObj.layer) & selectableLayer) == 0) return;
@@ -409,7 +354,7 @@ public class RaycastObjectMover : MonoBehaviour
     // 인터랙션 처리 (버튼 등)
     void HandleInteraction(Ray ray)
     {
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, rayDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
             if (((1 << hitObj.layer) & interactableLayer) != 0)
@@ -418,12 +363,6 @@ public class RaycastObjectMover : MonoBehaviour
                 interactable?.Interact();
             }
         }
-    }
-
-    // 숫자키로 지팡이를 장착할 때도 selectedWand가 정상적으로 설정되어 GetRayDistance()가 작동
-    public void SetSelectedWand(GameObject wand)
-    {
-        selectedWand = wand;
     }
 
     // 외부에서 현재 잡고 있는 오브젝트 강제 해제(RespawnTrigger)
@@ -437,20 +376,4 @@ public class RaycastObjectMover : MonoBehaviour
     {
         selectedWand = null;
     }
-
-    // 선택된 지팡이의 raycast 거리 가져오기
-    private float GetRayDistance()
-    {
-        if (selectedWand != null)
-        {
-            WandItem wandItem = selectedWand.GetComponent<WandItem>();
-            if (wandItem != null)
-            {
-                return wandItem.raycast_distance;
-            }
-        }
-
-        return rayDistance; // 기본값
-    }
-
 }
