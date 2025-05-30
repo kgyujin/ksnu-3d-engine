@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class WandItem : MonoBehaviour
 {
+    
     public float raycast_distance = 10f;
 
     // Transform values for proper positioning when equipped
@@ -20,4 +21,5 @@ public class WandItem : MonoBehaviour
             wandEffect.Play();
         }
     }
+
 }
