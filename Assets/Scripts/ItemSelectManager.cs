@@ -47,12 +47,6 @@ public class ItemSelectManager : MonoBehaviour
 
     void EquipRegisteredWand(int index)
     {
-        if (index < 0 || index >= registeredWands.Length)
-        {
-            Debug.LogWarning("잘못된 인덱스입니다.");
-            return;
-        }
-
         if (registeredWands[index] != null)
         {
             if (currentEquippedWeapon != null)
@@ -63,6 +57,13 @@ public class ItemSelectManager : MonoBehaviour
             registeredWands[index].SetActive(true);
             currentEquippedWeapon = registeredWands[index];
             ApplyItemTransform(currentEquippedWeapon);
+
+            // 선택된 지팡이를 RaycastObjectMover에 전달
+            if (raycastObjectMover != null)
+            {
+                raycastObjectMover.SetSelectedWand(currentEquippedWeapon);
+            }
+
             Debug.Log((index + 1) + "번 등록된 지팡이를 장착했습니다.");
         }
         else
