@@ -112,7 +112,7 @@
 
                 
                 LaunchObjects();
-            throwerAnimation?.RotateAroundParentPivot();
+                throwerAnimation?.RotateAroundParentPivot();
 
 
 
@@ -210,6 +210,7 @@
                 rb.AddForce(force, ForceMode.VelocityChange);
             }
         }
+
     }
 
 
@@ -240,14 +241,19 @@
 
     public void Increase()
     {
-
-        launchForce += changeableValue;
+        if (launchForce <= 40)
+        {
+            launchForce += changeableValue;
+        }
         //Debug.Log($"{gameObject.name} 숫자 증가: {currentValue}");
     }
 
     public void Decrease()
     {
-        launchForce -= changeableValue;
+        if (launchForce >= 10)
+        {
+            launchForce -= changeableValue;
+        }
         //Debug.Log($"{gameObject.name} 숫자 감소: {currentValue}");
     }
 

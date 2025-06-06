@@ -558,6 +558,7 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
         {
             IsPressed = true;  // 버튼이 눌렸을 때 상태를 true로 설정
             pushEffect?.HoldingButton(); // 눌림 효과 시작
+            
 
             // 타겟 객체가 설정되어 있으면 값을 조절
             if (buttonControllableTarget != null)
@@ -569,6 +570,7 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
                 }
 
                 changeValueCoroutine = StartCoroutine(ChangeValueOverTime()); // 값을 변경하는 코루틴 시작
+                //IsPressed = false;  // 버튼 놓은 상태로 변경
             }
         }
         else
@@ -595,6 +597,8 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
 
             yield return new WaitForSeconds(interval); // 1초 대기
         }
+        ReleaseButton();  // 버튼 놓는 메서드 호출
+        IsPressed = false;  // 버튼 놓은 상태로 변경
     }
 
     // 버튼 눌림 효과가 끝났을 때 호출되는 메서드

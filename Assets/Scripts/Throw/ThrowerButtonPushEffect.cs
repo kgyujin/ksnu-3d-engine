@@ -196,10 +196,13 @@ public class ThrowerButtonPushEffect : MonoBehaviour
         if (_renderer != null)
             _renderer.material.color = _originalColor;
 
-        _isAnimating = false;
+
 
         // 애니메이션 완료 이벤트 호출
+        _isAnimating = false;
+        ReleasButton();
         OnPushComplete?.Invoke();
+
     }
 
     // 버튼을 계속 눌렀을 때 호출되는 메서드
