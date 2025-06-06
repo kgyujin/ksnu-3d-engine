@@ -272,7 +272,7 @@ public class RaycastObjectMover : MonoBehaviour
                     if (itemSelecteManager != null)
                     {
                         itemSelecteManager.WearItem(hitObj);
-                        selectedWand = hitObj; // 지팡이 선택 상태 업데이트
+                        //selectedWand = hitObj; // 지팡이 선택 상태 업데이트
                     }
                 }
             }
@@ -357,7 +357,7 @@ public class RaycastObjectMover : MonoBehaviour
     }
 
     // 오브젝트 해제 처리
-    void ReleaseSelectedObject()
+    public void ReleaseSelectedObject()
     {
         if (selectedObject == null) return;
 

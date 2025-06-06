@@ -530,6 +530,7 @@ public class player_movement : MonoBehaviour
 
     void Update()
     {
+        
         inputDir = new Vector3(cameras.horizontalInput, 0, cameras.verticalInput);
         movement = cameras.moveDir;
 

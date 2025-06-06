@@ -43,10 +43,13 @@ public class ItemSelectManager : MonoBehaviour
         {
             ToggleBackItem();
         }
+        
     }
 
     void EquipRegisteredWand(int index)
     {
+        raycastObjectMover.ReleaseSelectedObject();
+        
         if (registeredWands[index] != null)
         {
             if (currentEquippedWeapon != null)
@@ -68,12 +71,15 @@ public class ItemSelectManager : MonoBehaviour
         }
         else
         {
+            raycastObjectMover.SetSelectedWand(null);
+            raycastObjectMover.SetRaycastDistance(9);
             Debug.LogWarning((index + 1) + "번 슬롯에 등록된 지팡이가 없습니다. 기본 아이템 장착을 시도합니다.");
 
             // Item 배열에 아이템이 있으면 장착 시도
             if (index < Item.Length)
             {
                 ItemSelect(index);
+                raycastObjectMover.SetSelectedWand(null);
             }
             else
             {
