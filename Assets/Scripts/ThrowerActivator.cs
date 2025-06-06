@@ -1,155 +1,257 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿//using UnityEngine;
 
-public class ThrowerActivator : MonoBehaviour, IInteractable
+//public class ThrowActivator : MonoBehaviour, IInteractable
+//{
+//    // 현재 버튼이 눌려있는지 상태를 저장하는 프로퍼티
+//    public bool IsPressed { get; private set; }
+
+//    // 버튼 눌림 효과를 담당하는 컴포넌트 참조
+//    private ThrowerButtonPushEffect pushEffect;
+
+//    // 초기화: 컴포넌트 참조하고 이벤트 구독
+//    private void Awake()
+//    {
+//        pushEffect = GetComponent<ThrowerButtonPushEffect>();
+
+//        // pushEffect가 있으면 애니메이션 완료 이벤트 구독
+//        if (pushEffect != null)
+//        {
+//            pushEffect.OnPushComplete += OnPushComplete;
+//        }
+//    }
+
+//    // IInteractable 인터페이스의 인터랙션 진입점
+//    public void Interact()
+//    {
+//        // 버튼 눌림 시도
+//        PressButton();
+//    }
+
+//    // 버튼을 누르는 동작 수행
+//    public void PressButton()
+//    {
+//        // 이미 눌려있으면 중복 실행 방지
+//        if (!IsPressed)
+//        {
+//            IsPressed = true;
+
+//            // 푸시 효과 시작 (애니메이션 재생)
+//            pushEffect?.StartPushEffect();
+//        }
+//    }
+
+//    // 푸시 애니메이션 완료 시 호출되는 콜백
+//    private void OnPushComplete()
+//    {
+//        // 버튼 상태 해제 (다시 누를 수 있게)
+//        ReleaseButton();
+//    }
+
+//    // 버튼 상태를 눌리지 않은 상태로 변경
+//    public void ReleaseButton()
+//    {
+//        IsPressed = false;
+//    }
+
+//    // 오브젝트가 파괴될 때 이벤트 구독 해제 (메모리 누수 방지)
+//    private void OnDestroy()
+//    {
+//        if (pushEffect != null)
+//        {
+//            pushEffect.OnPushComplete -= OnPushComplete;
+//        }
+//    }
+//}
+
+    using UnityEngine;
+
+    public class ThrowActivator : MonoBehaviour, IInteractable, IButtonControllable
 {
-    public GameObject[] targetObjects;
+        public bool IsPressed { get; private set; }
+        private ThrowerButtonPushEffect pushEffect;
 
-    [Header("회전 설정")]
-    public float targetZRotation = 45f;
+    [Header("회전 애니메이션 설정")]
+    [Tooltip("회전 애니메이션을 실행할 ThrowerAnimation 스크립트")]
+    public ThrowerAnimation throwerAnimation;
 
-    [Header("절대 위치 설정 (로컬 좌표 기준)")]
-    public Vector3 targetPosition;
+    [Header("발사 관련 설정")]
+        [Tooltip("발사 대상 오브젝트들이 모여있는 부모 트랜스폼")]
+        public Transform launchPlatform;
 
-    [Header("애니메이션 설정")]
-    public float moveDuration = 0.1f;   // 빠르게 보이도록 짧게
-    public float holdDuration = 0.2f;
+        [Tooltip("발사할 힘 크기")]
+        public float launchForce = 10f;
+        [Tooltip("발사할 힘 크기")]
+        public float changeableValue = 0.1f;
 
-    private bool isPressed = false;
+    [Tooltip("x축 발사 방향의 힘 배율")]
+        public float xForceMultiplier = 1f;
 
-    private Renderer _renderer;
-    private Color _originalColor;
-    private Color _pressedColor = Color.red;
+        [Tooltip("y축 발사 방향의 힘 배율")]
+        public float yForceMultiplier = 1f;
 
-    public ThrowerPlatformParents throwerPlatform;
-
-    private ButtonPushEffect _pushEffect;
-
-    public bool IsPressed => isPressed;
-
-    private void Awake()
-    {
-        _renderer = GetComponent<Renderer>();
-        _pushEffect = GetComponent<ButtonPushEffect>();
-
-        if (_renderer != null)
+        private void Awake()
         {
-            _originalColor = _renderer.material.color;
+            pushEffect = GetComponent<ThrowerButtonPushEffect>();
+            if (pushEffect != null)
+            {
+                pushEffect.OnPushComplete += OnPushComplete;
+            }
+        }
+
+        public void Interact()
+        {
+            PressButton();
+        }
+
+        public void PressButton()
+        {
+            if (!IsPressed)
+            {
+                IsPressed = true;
+                pushEffect?.StartPushEffect();
+
+                
+                LaunchObjects();
+            throwerAnimation?.RotateAroundParentPivot();
+
+
+
+        }   
+        }
+    //private void LaunchObjects()
+    //{
+    //    if (launchPlatform == null)
+    //    {
+    //        Debug.LogWarning("발사대(launchPlatform) 설정이 필요합니다.");
+    //        return;
+    //    }
+
+    //    Vector3 center = launchPlatform.position;
+    //    Vector3 halfExtents = new Vector3(1f, 1f, 1f);  // 필요에 따라 조절
+
+    //    Collider[] colliders = Physics.OverlapBox(center, halfExtents);
+
+    //    foreach (Collider col in colliders)
+    //    {
+    //        Rigidbody rb = col.attachedRigidbody;
+    //        if (rb != null)
+    //        {
+    //            Debug.Log($"발사 대상: {rb.gameObject.name}");
+
+    //            Vector3 force = new Vector3(xForceMultiplier, yForceMultiplier, 0f).normalized * launchForce;
+
+    //            // 질량 무시하고 속도 즉시 변경
+    //            rb.AddForce(force, ForceMode.VelocityChange);
+    //        }
+    //    }
+    //}
+    //private void LaunchObjects()
+    //{
+    //    if (launchPlatform == null)
+    //    {
+    //        Debug.LogWarning("발사대(launchPlatform) 설정이 필요합니다.");
+    //        return;
+    //    }
+
+    //    Vector3 center = launchPlatform.position;
+    //    Vector3 halfExtents = new Vector3(1f, 1f, 1f);  // 필요에 따라 조절
+
+    //    Collider[] colliders = Physics.OverlapBox(center, halfExtents);
+
+    //    foreach (Collider col in colliders)
+    //    {
+    //        Rigidbody rb = col.attachedRigidbody;
+    //        if (rb != null)
+    //        {
+    //            Debug.Log($"발사 대상: {rb.gameObject.name}");
+
+    //            // 발사판의 x, y축 방향에 따라 힘 계산
+    //            Vector3 forceDirection = (launchPlatform.right * xForceMultiplier + launchPlatform.up * yForceMultiplier).normalized;
+    //            Vector3 force = forceDirection * launchForce;
+
+    //            rb.AddForce(force, ForceMode.VelocityChange);
+    //        }
+    //    }
+    //}
+    private void LaunchObjects()
+    {
+        if (launchPlatform == null)
+        {
+            Debug.LogWarning("발사대(launchPlatform) 설정이 필요합니다.");
+            return;
+        }
+
+        // 자식에서 BoxCollider 찾기 (첫 번째 자식에 있다고 가정)
+        BoxCollider boxCollider = launchPlatform.GetComponentInChildren<BoxCollider>();
+        if (boxCollider == null)
+        {
+            Debug.LogWarning("launchPlatform 자식에 BoxCollider가 필요합니다.");
+            return;
+        }
+
+        Vector3 center = boxCollider.bounds.center; // 월드 공간 중심
+        Vector3 halfExtents = boxCollider.bounds.extents; // 월드 공간 반 크기
+        Quaternion rotation = boxCollider.transform.rotation; // 콜라이더가 붙은 자식의 회전
+
+        Debug.Log($"OverlapBox center: {center}, halfExtents: {halfExtents}, rotation: {rotation.eulerAngles}");
+
+        Collider[] colliders = Physics.OverlapBox(center, halfExtents, rotation);
+
+        foreach (Collider col in colliders)
+        {
+            Rigidbody rb = col.attachedRigidbody;
+            if (rb != null)
+            {
+                Debug.Log($"발사 대상: {rb.gameObject.name}");
+
+                Vector3 forceDirection = (launchPlatform.right * xForceMultiplier + launchPlatform.up * yForceMultiplier).normalized;
+                Vector3 force = forceDirection * launchForce;
+
+                rb.AddForce(force, ForceMode.VelocityChange);
+            }
         }
     }
 
-    public void Interact()
+
+
+
+
+
+
+
+
+    private void OnPushComplete()
+        {
+            ReleaseButton();
+        }
+
+        public void ReleaseButton()
+        {
+            IsPressed = false;
+        }
+
+        private void OnDestroy()
+        {
+            if (pushEffect != null)
+            {
+                pushEffect.OnPushComplete -= OnPushComplete;
+            }
+        }
+
+    public void Increase()
     {
-        if (isPressed) return;
 
-        isPressed = true;
-
-        if (_renderer != null)
-            _renderer.material.color = _pressedColor;
-
-        if (_pushEffect != null)
-            _pushEffect.StartPushEffect();
-
-        StartCoroutine(RotateAllAndThrow());
+        launchForce += changeableValue;
+        //Debug.Log($"{gameObject.name} 숫자 증가: {currentValue}");
     }
 
-    private IEnumerator RotateAllAndThrow()
+    public void Decrease()
     {
-        foreach (GameObject obj in targetObjects)
-        {
-            if (obj != null)
-                yield return RotateAndMoveLerp(obj.transform, targetZRotation, targetPosition, moveDuration, holdDuration);
-        }
-
-        if (throwerPlatform != null)
-        {
-            throwerPlatform.LaunchObjects();
-        }
-
-        isPressed = false;
-
-        if (_renderer != null)
-            _renderer.material.color = _originalColor;
+        launchForce -= changeableValue;
+        //Debug.Log($"{gameObject.name} 숫자 감소: {currentValue}");
     }
 
-    private IEnumerator RotateAndMoveLerp(Transform target, float newZAngle, Vector3 targetLocalPos, float duration, float waitTime)
-    {
-        Quaternion originalRot = target.rotation;
-        Quaternion targetRot = Quaternion.Euler(target.eulerAngles.x, target.eulerAngles.y, newZAngle);
 
-        Vector3 originalLocalPos = target.localPosition;
 
-        Rigidbody rb = target.GetComponent<Rigidbody>();
 
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            Quaternion lerpedRot = Quaternion.Slerp(originalRot, targetRot, t);
-            Vector3 lerpedLocalPos = Vector3.Lerp(originalLocalPos, targetLocalPos, t);
-
-            if (rb != null && rb.isKinematic)
-            {
-                rb.MoveRotation(lerpedRot);
-                rb.MovePosition(target.parent.TransformPoint(lerpedLocalPos)); // 로컬 → 월드
-            }
-            else
-            {
-                target.rotation = lerpedRot;
-                target.localPosition = lerpedLocalPos;
-            }
-
-            yield return null;
-        }
-
-        if (rb != null && rb.isKinematic)
-        {
-            rb.MoveRotation(targetRot);
-            rb.MovePosition(target.parent.TransformPoint(targetLocalPos));
-        }
-        else
-        {
-            target.rotation = targetRot;
-            target.localPosition = targetLocalPos;
-        }
-
-        yield return new WaitForSeconds(waitTime);
-
-        // 복원
-        elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            Quaternion lerpedRot = Quaternion.Slerp(targetRot, originalRot, t);
-            Vector3 lerpedLocalPos = Vector3.Lerp(targetLocalPos, originalLocalPos, t);
-
-            if (rb != null && rb.isKinematic)
-            {
-                rb.MoveRotation(lerpedRot);
-                rb.MovePosition(target.parent.TransformPoint(lerpedLocalPos));
-            }
-            else
-            {
-                target.rotation = lerpedRot;
-                target.localPosition = lerpedLocalPos;
-            }
-
-            yield return null;
-        }
-
-        if (rb != null && rb.isKinematic)
-        {
-            rb.MoveRotation(originalRot);
-            rb.MovePosition(target.parent.TransformPoint(originalLocalPos));
-        }
-        else
-        {
-            target.rotation = originalRot;
-            target.localPosition = originalLocalPos;
-        }
-    }
 }
