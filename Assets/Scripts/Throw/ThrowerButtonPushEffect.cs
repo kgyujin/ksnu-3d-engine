@@ -122,7 +122,7 @@ public class ThrowerButtonPushEffect : MonoBehaviour
 
     private Vector3 _originalPosition;
     private Vector3 _targetPosition;
-    private bool _isAnimating = false;
+    public bool _isAnimating = false;
 
     private Renderer _renderer;
     private Color _originalColor;
@@ -199,7 +199,6 @@ public class ThrowerButtonPushEffect : MonoBehaviour
 
 
         // 애니메이션 완료 이벤트 호출
-        _isAnimating = false;
         ReleasButton();
         OnPushComplete?.Invoke();
 

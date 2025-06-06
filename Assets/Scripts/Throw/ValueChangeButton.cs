@@ -559,7 +559,7 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
             IsPressed = true;  // 버튼이 눌렸을 때 상태를 true로 설정
             pushEffect?.HoldingButton(); // 눌림 효과 시작
             
-
+            
             // 타겟 객체가 설정되어 있으면 값을 조절
             if (buttonControllableTarget != null)
             {
@@ -570,8 +570,8 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
                 }
 
                 changeValueCoroutine = StartCoroutine(ChangeValueOverTime()); // 값을 변경하는 코루틴 시작
-                //IsPressed = false;  // 버튼 놓은 상태로 변경
             }
+            
         }
         else
         {
@@ -585,20 +585,40 @@ public class ValueChangeButton : MonoBehaviour, IInteractable
 
 
     // 1초 간격으로 값을 증가/감소 시키는 코루틴
+    //private IEnumerator ChangeValueOverTime()
+    //{
+    //    //float interval = 0.1f; // 1초 간격으로 값을 변경
+    //    while (IsPressed)  // 버튼이 눌린 상태에서만 실행
+    //    {
+    //        if (changeDirection == ValueChangeDirection.Increase)
+    //            buttonControllableTarget.Increase();
+    //        else
+    //            buttonControllableTarget.Decrease();
+
+    //        yield return new WaitForSeconds(interval); // 1초 대기
+    //    }
+    //}
     private IEnumerator ChangeValueOverTime()
     {
-        //float interval = 0.1f; // 1초 간격으로 값을 변경
-        while (IsPressed)  // 버튼이 눌린 상태에서만 실행
+        while (IsPressed)
         {
+            // 만약 애니메이션이 끝났다면 자동으로 멈춤
+            if (pushEffect != null && !pushEffect._isAnimating)
+            {
+                pushEffect.ReleasButton();  // 눌림 효과 종료
+                ReleaseButton();            // 값 증가/감소 종료
+                IsPressed = false;          // 상태 초기화
+                yield break;                // 코루틴 종료
+            }
+
+            // 값 증가 또는 감소
             if (changeDirection == ValueChangeDirection.Increase)
                 buttonControllableTarget.Increase();
             else
                 buttonControllableTarget.Decrease();
 
-            yield return new WaitForSeconds(interval); // 1초 대기
+            yield return new WaitForSeconds(interval);
         }
-        ReleaseButton();  // 버튼 놓는 메서드 호출
-        IsPressed = false;  // 버튼 놓은 상태로 변경
     }
 
     // 버튼 눌림 효과가 끝났을 때 호출되는 메서드
