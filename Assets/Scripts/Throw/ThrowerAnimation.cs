@@ -24,13 +24,26 @@ public class ThrowerAnimation : MonoBehaviour
         originalLocalRotation = childObject.localRotation;
     }
 
+    //public void RotateAroundParentPivot()
+    //{
+    //    StopAllCoroutines();
+
+    //    float direction = rotateClockwise ? -1f : 1f; // 시계방향이면 음수
+    //                                                  // 로컬 Z축 기준으로 회전
+    //    StartCoroutine(RotateAround(pivotTransform.position, pivotTransform.forward, direction * rotationAngle, true));
+    //}
+
     public void RotateAroundParentPivot()
     {
         StopAllCoroutines();
 
         float direction = rotateClockwise ? -1f : 1f; // 시계방향이면 음수
-        StartCoroutine(RotateAround(pivotTransform.position, Vector3.forward, direction * rotationAngle, true));
+                                                      // Y축 기준 회전
+        StartCoroutine(RotateAround(pivotTransform.position, pivotTransform.up, direction * rotationAngle, true));
     }
+
+
+
 
     IEnumerator RotateAround(Vector3 pivot, Vector3 axis, float angle, bool returnBack)
     {
