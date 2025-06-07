@@ -311,7 +311,7 @@ public class RaycastObjectMover : MonoBehaviour
         // 지팡이가 선택되지 않은 상태에서는 선택 불가능하게 수정
         if (!IsWandSelected) return;
 
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance(), ~0, QueryTriggerInteraction.Ignore))
         {
             GameObject hitObj = hit.collider.gameObject;
             if (((1 << hitObj.layer) & selectableLayer) == 0) return;
@@ -423,7 +423,7 @@ public class RaycastObjectMover : MonoBehaviour
     // 인터랙션 처리 (버튼 등)
     void HandleInteraction(Ray ray)
     {
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit hit, GetRayDistance(), ~0, QueryTriggerInteraction.Ignore))
         {
             GameObject hitObj = hit.collider.gameObject;
             if (((1 << hitObj.layer) & interactableLayer) != 0)
