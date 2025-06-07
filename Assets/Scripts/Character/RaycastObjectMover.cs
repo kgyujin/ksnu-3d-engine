@@ -129,7 +129,8 @@ public class RaycastObjectMover : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+            if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance(), ~0, QueryTriggerInteraction.Ignore))
+
             {
                 GameObject hitObj = hit.collider.gameObject;
 
@@ -230,7 +231,7 @@ public class RaycastObjectMover : MonoBehaviour
         bool hitSelectable = false;
         bool hitInteractable = false;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance()))
+        if (Physics.Raycast(ray, out RaycastHit hit, GetRayDistance(), ~0, QueryTriggerInteraction.Ignore))
         {
             GameObject hitObj = hit.collider.gameObject;
 

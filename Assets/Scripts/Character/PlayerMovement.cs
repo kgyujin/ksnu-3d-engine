@@ -838,14 +838,46 @@ public class player_movement : MonoBehaviour
     {
         Vector3 origin = transform.position - Vector3.up * 0.1f;
 
-        if (Physics.Raycast(origin, Vector3.down, out hit, RaycastDistance - 0.1f))
+        if (Physics.Raycast(origin, Vector3.down, out hit, RaycastDistance - 0.1f,~0, QueryTriggerInteraction.Ignore))
+
         {
             return true;
         }
 
         float radius = 0.3f;
-        return Physics.SphereCast(origin, radius, Vector3.down, out hit, RaycastDistance - 0.1f - radius);
+        //return Physics.SphereCast(origin, radius, Vector3.down, out hit, RaycastDistance - 0.1f - radius);
+        return Physics.SphereCast(origin, radius, Vector3.down, out hit, RaycastDistance - 0.1f - radius,~0, QueryTriggerInteraction.Ignore);
+
+
     }
+
+    //private bool Check_isGrounded()
+    //{
+    //    Vector3 origin = transform.position - Vector3.up * 0.1f;
+
+    //    // Raycast 검사
+    //    if (Physics.Raycast(origin, Vector3.down, out hit, RaycastDistance - 0.1f))
+    //    {
+    //        if (!hit.collider.isTrigger)
+    //        {
+    //            return true;
+    //        }
+    //    }
+
+    //    // SphereCast 검사
+    //    float radius = 0.3f;
+    //    if (Physics.SphereCast(origin, radius, Vector3.down, out hit, RaycastDistance - 0.1f - radius))
+    //    {
+    //        if (!hit.collider.isTrigger)
+    //        {
+    //            return true;
+    //        }
+    //    }
+
+    //    return false;
+    //}
+
+
 
     private void HandleRotation()
     {
