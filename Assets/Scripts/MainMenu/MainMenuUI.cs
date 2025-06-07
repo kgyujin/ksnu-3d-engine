@@ -7,7 +7,7 @@ public class MainMenuUI : MonoBehaviour
     public void OnStartGame()
     {
         // GameScene이라는 이름의 씬을 로드
-        SceneManager.LoadScene("Level Design_Respawn");
+        SceneManager.LoadScene("Final");
     }
 
     // 게임 종료 버튼 클릭 시 호출

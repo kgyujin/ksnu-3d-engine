@@ -241,26 +241,6 @@ public class ItemSelectManager : MonoBehaviour
         Debug.Log("모든 슬롯이 차있어 1번 슬롯에 지팡이를 덮어썼습니다.");
     }
 
-    //private void ApplyItemTransform(GameObject item)
-    //{
-    //    // WandItem 컴포넌트가 있는지 확인
-    //    WandItem wandItem = item.GetComponent<WandItem>();
-    //    if (wandItem != null)
-    //    {
-    //        // WandItem에서 지정한 Transform 값을 적용
-    //        item.transform.localPosition = wandItem.equipPosition;
-    //        item.transform.localRotation = Quaternion.Euler(wandItem.equipRotation);
-    //        item.transform.localScale = wandItem.equipScale;
-    //        Debug.Log("지팡이 장착 완료 - 회전: " + wandItem.equipRotation + ", 크기: " + wandItem.equipScale);
-    //    }
-    //    else
-    //    {
-    //        // 기본 위치와 회전 적용
-    //        item.transform.localPosition = Vector3.zero;
-    //        item.transform.localRotation = Quaternion.identity;
-    //    }
-    //}
-
     private void ApplyItemTransform(GameObject item)
     {
         WandItem wandItem = item.GetComponent<WandItem>();
