@@ -288,15 +288,18 @@ public class ItemSelectManager : MonoBehaviour
 
     private void ApplyBackItemTransform(GameObject item)
     {
+
         // BackItem 컴포넌트가 있는지 확인
         BackItem backItem = item.GetComponent<BackItem>();
         if (backItem != null)
         {
+            
             // BackItem에서 지정한 Transform 값을 적용 (캐릭터 로컬 좌표 기준)
             item.transform.localPosition = backItem.equipPosition;
             item.transform.localRotation = Quaternion.Euler(backItem.equipRotation);
             item.transform.localScale = backItem.equipScale;
             Debug.Log("등 아이템 장착 완료 - 위치: " + backItem.equipPosition + ", 회전: " + backItem.equipRotation);
+            item.layer = 0;
         }
         else
         {
