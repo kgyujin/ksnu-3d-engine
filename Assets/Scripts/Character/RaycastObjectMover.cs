@@ -93,17 +93,18 @@ public class RaycastObjectMover : MonoBehaviour
         if (drawDebugRay)
             Debug.DrawRay(centerRay.origin, centerRay.direction * GetRayDistance(), Color.cyan);
 
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (selectedObject == null && selectedWand == null)
-        {
-            rayDistance += scroll * 5f;
-            rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
-        }
-        else if (selectedObject != null && Mathf.Abs(scroll) > 0.01f)
-        {
-            grabDistance -= scroll * 5f;
-            grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
-        }
+
+        //float scroll = Input.GetAxis("Mouse ScrollWheel");
+        //if (selectedObject == null && selectedWand == null)
+        //{
+        //    rayDistance += scroll * 5f;
+        //    rayDistance = Mathf.Clamp(rayDistance, 1f, 100f);
+        //}
+        //else if (selectedObject != null && Mathf.Abs(scroll) > 0.01f)
+        //{
+        //    grabDistance -= scroll * 5f;
+        //    grabDistance = Mathf.Clamp(grabDistance, 1f, 100f);
+        //}
 
         // 마우스 휠로 거리 조절
         //float scroll = Input.GetAxis("Mouse ScrollWheel");
