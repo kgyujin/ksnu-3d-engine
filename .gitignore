@@ -72,3 +72,11 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+UpgradeLog.htm
+
+# TextMesh Pro 예제 및 샘플 리소스 제외
+# TMP는 Package Manager로 설치되며, Examples, Shaders, Sprites 등은 자동 재생성 가능
+# 실제 사용하는 폰트 에셋(Resources/Fonts & Materials)은 반드시 Git에 포함
+Assets/TextMesh Pro/Examples & Extras/
+Assets/TextMesh Pro/Shaders/
+Assets/TextMesh Pro/Sprites/
