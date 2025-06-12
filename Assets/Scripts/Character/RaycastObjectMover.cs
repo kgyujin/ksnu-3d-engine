@@ -66,6 +66,9 @@ public class RaycastObjectMover : MonoBehaviour
 
     void Update()
     {
+        // 일시정지 중일 때 Raycast 관련 로직 중단
+        if (Time.timeScale == 0f) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
